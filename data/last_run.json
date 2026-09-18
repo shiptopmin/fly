@@ -7,8 +7,8 @@
     1,
     7
   ],
-  "started_at": "2026-09-18T15:56:12+09:00",
-  "finished_at": "2026-09-18T15:57:36+09:00",
+  "started_at": "2026-09-18T16:14:19+09:00",
+  "finished_at": "2026-09-18T16:15:39+09:00",
   "headless": true,
   "records_collected": 189,
   "records_added_to_csv": 189,
@@ -20,5 +20,5 @@
   "errors": [],
   "page_loads": 9,
   "grid_steps": 0,
-  "total_rows_in_csv": 567
+  "total_rows_in_csv": 756
 }
