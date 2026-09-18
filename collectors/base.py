@@ -57,5 +57,12 @@ class BaseCollector(ABC):
         allow_next_month_return: bool,
         headless: bool,
     ) -> CollectResult:
-        """대상 월의 (출발일, 귀국일) 조합 가격을 수집해서 CollectResult 로 돌려줍니다."""
+        """대상 월의 (출발일, 귀국일) 조합 가격을 수집해서 CollectResult 로 돌려줍니다. (트래커용)"""
         raise NotImplementedError
+
+    def collect_query(self, query, headless: bool) -> CollectResult:
+        """SearchQuery(search_conditions.py) 조건으로 수집합니다. (동적 검색용, Phase 6)
+
+        구현하지 않은 Collector 는 동적 검색을 지원하지 않는 것으로 봅니다.
+        """
+        raise NotImplementedError(f"{self.name} collector does not support collect_query()")

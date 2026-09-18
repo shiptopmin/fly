@@ -34,6 +34,7 @@ DATA_DIR = "data"
 RAW_FILE = "data/flights_raw.csv"       # 가격 이력이 계속 누적되는 파일
 LAST_RUN_FILE = "data/last_run.json"    # 가장 최근 실행 요약 (덮어씀)
 DASHBOARD_FILE = "docs/index.html"      # HTML Dashboard (GitHub Pages 가 docs/ 를 서비스)
+SEARCH_DIR = "data/searches"            # 동적 검색(search.py) 결과 저장 폴더. 트래커 CSV 와 분리
 
 # --- 사이트 부하 최소화 ---
 # 페이지를 연속으로 열 때 사이에 두는 대기 시간(초). 봇 탐지 우회 목적이 아니라

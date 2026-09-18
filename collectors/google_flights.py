@@ -34,6 +34,7 @@ from urllib.parse import quote
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 
 from .base import BaseCollector, CollectResult, PriceRecord
+from search_conditions import SearchQuery
 
 log = logging.getLogger("collector.google_flights")
 
@@ -64,10 +65,20 @@ class GoogleFlightsCollector(BaseCollector):
     # ------------------------------------------------------------------
     def collect(self, origin, destination, year, month, min_nights, max_nights,
                 allow_next_month_return, headless) -> CollectResult:
+        """트래커용(월 단위). 조건을 SearchQuery 로 감싸서 collect_query 에 넘깁니다."""
+        query = SearchQuery.for_month(origin, destination, year, month,
+                                      min_nights, max_nights, allow_next_month_return)
+        return self.collect_query(query, headless)
+
+    def collect_query(self, query: SearchQuery, headless) -> CollectResult:
+        """SearchQuery 조건의 (출발일, 귀국일) 조합 가격을 수집합니다. (트래커/동적 검색 공용)"""
+        query.validate()
         result = CollectResult()
+        origin, destination = query.origin, query.destination
 
         # 1) 이번 실행에서 확인해야 하는 (출발일, 귀국일) 조합 목록
-        needed = self._needed_pairs(year, month, min_nights, max_nights, allow_next_month_return)
+        needed = query.needed_pairs()
+        log.debug("Query: %s", query.describe())
         log.debug("Needed (departure, return) pairs: %d", len(needed))
 
         # 2) 필요한 조합을 모두 덮는 검색 기준일(출발, 귀국) 목록
@@ -90,7 +101,7 @@ class GoogleFlightsCollector(BaseCollector):
                 for i, (anchor_dep, anchor_ret) in enumerate(anchors, start=1):
                     if i > 1:
                         time.sleep(self.page_load_delay)  # 연속 요청 사이 대기 (사이트 부하 최소화)
-                    url = self._build_url(origin, destination, anchor_dep, anchor_ret)
+                    url = self._build_url(origin, destination, anchor_dep, anchor_ret, query.nonstop)
                     log.debug("[%d/%d] Opening page: %s", i, len(anchors), url)
                     try:
                         page.goto(url, wait_until="domcontentloaded", timeout=60_000)
@@ -180,20 +191,6 @@ class GoogleFlightsCollector(BaseCollector):
     # 내부 도우미
     # ------------------------------------------------------------------
     @staticmethod
-    def _needed_pairs(year, month, min_nights, max_nights, allow_next_month_return):
-        """대상 월의 출발일 x 숙박일수 조합을 (출발일, 귀국일) 날짜 튜플로 만듭니다."""
-        pairs = []
-        d = date(year, month, 1)
-        while d.month == month:
-            for n in range(min_nights, max_nights + 1):
-                r = d + timedelta(days=n)
-                if r.month != month and not allow_next_month_return:
-                    continue
-                pairs.append((d, r))
-            d += timedelta(days=1)
-        return pairs
-
-    @staticmethod
     def _plan_anchors(needed):
         """필요한 조합을 7x7 창으로 모두 덮는 검색 기준일 목록을 만듭니다.
 
@@ -220,8 +217,10 @@ class GoogleFlightsCollector(BaseCollector):
             c0 = c6 + timedelta(days=1)
         return anchors
 
-    def _build_url(self, origin, destination, dep, ret):
-        q = f"Flights from {origin} to {destination} on {dep.isoformat()} through {ret.isoformat()}"
+    def _build_url(self, origin, destination, dep, ret, nonstop=False):
+        # "Nonstop flights from ..." 문구를 넣으면 페이지에 '직항' 필터가 적용되는 것을 확인함 (2026-09-18)
+        prefix = "Nonstop flights" if nonstop else "Flights"
+        q = f"{prefix} from {origin} to {destination} on {dep.isoformat()} through {ret.isoformat()}"
         return (f"https://www.google.com/travel/flights?q={quote(q)}"
                 f"&hl={self.language}&curr={self.currency}")
 
