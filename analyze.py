@@ -1,11 +1,12 @@
 """
-analyze.py - 저장된 실제 가격 데이터 분석 (터미널 출력)
+analyze.py - 저장된 실제 가격 데이터 분석 (터미널 출력) - 노선별로 따로 계산
 
 실행:
-    python analyze.py          -> 요약(현재 최저가, 통계, Top 5, 숙박일수별 최저가)
-    python analyze.py --all    -> 위 내용 + 모든 조합 목록
+    python analyze.py                 -> 모든 추적 노선 요약
+    python analyze.py --route ICN-KIX -> 한 노선만
+    python analyze.py --all           -> 모든 조합 목록도 출력
 
-사이트에 접속하지 않습니다. data/flights_raw.csv 만 읽습니다.
+사이트에 접속하지 않습니다. data/history/<노선>.csv 만 읽습니다.
 계산은 analyzer/report.py 에서 하고, 여기서는 보여주기만 합니다.
 """
 import argparse
@@ -14,6 +15,7 @@ import sys
 import config
 from analyzer.report import build_report
 from analyzer import stats
+from routes import load_routes
 
 MEDALS = ["🥇", "🥈", "🥉", "4위", "5위"]
 
@@ -27,19 +29,9 @@ def fmt_stats(w: stats.WindowStats):
     return f"{w.label}: 평균 {w.avg:,.0f}원 / 최저 {w.low:,}원 / 최고 {w.high:,}원 ({w.days}일치)"
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Flight Price Tracker - analysis")
-    parser.add_argument("--all", action="store_true", help="모든 조합 목록도 출력")
-    args = parser.parse_args()
-
-    rp = build_report(config)
-    if rp is None:
-        print(f"데이터 없음: {config.RAW_FILE} 가 없거나 분석할 조합이 없습니다. 먼저 `python main.py` 로 수집하세요.")
-        return 1
-
+def print_report(rp, show_all=False):
     print("=" * 60)
-    print("✈️  Flight Price Tracker - 분석")
-    print(f"{rp.origin} → {rp.destination}   {rp.year}년 {rp.month}월")
+    print(f"✈️  {rp.origin} → {rp.destination}   {rp.year}년 {rp.month}월")
     print(f"마지막 수집: {rp.latest_collected_at}   (분석 조합 {len(rp.trips)}개, 수집일 수 {rp.days_collected}일, 누적 {rp.total_rows}행)")
     print("-" * 60)
     print(f"현재 최저가        {rp.current_min:>12,}원")
@@ -74,7 +66,7 @@ def main():
             print(f"  {n}박 → {t.price:>9,}원   {t.period_label}  {t.weekend_label}")
     print("=" * 60)
 
-    if args.all:
+    if show_all:
         for nights in range(rp.min_nights, rp.max_nights + 1):
             items = rp.groups.get(nights, [])
             weekend = sum(1 for t in items if t.includes_weekend)
@@ -84,7 +76,33 @@ def main():
             for t in items:
                 print(f"  {t.period_label}  {t.price:>9,}원  {t.weekend_label}")
         print()
-    return 0
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Flight Price Tracker - analysis")
+    parser.add_argument("--route", help="한 노선만 (예: ICN-KIX)")
+    parser.add_argument("--all", action="store_true", help="모든 조합 목록도 출력")
+    args = parser.parse_args()
+
+    routes = load_routes()
+    if args.route:
+        routes = [r for r in routes if r.slug == args.route.upper()]
+        if not routes:
+            print(f"config.ROUTES 에 없는 노선: {args.route}")
+            return 1
+
+    shown = 0
+    for route in routes:
+        rp = build_report(route, config)
+        if rp is None:
+            print("=" * 60)
+            print(f"✈️  {route.label}   {route.month_label}")
+            print(f"데이터 없음: {route.history_file} 가 없거나 분석할 조합이 없습니다. (`python main.py` 로 수집)")
+            print("=" * 60)
+            continue
+        print_report(rp, args.all)
+        shown += 1
+    return 0 if shown else 1
 
 
 if __name__ == "__main__":

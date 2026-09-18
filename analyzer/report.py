@@ -43,19 +43,24 @@ class Report:
         return len(self.series)
 
 
-def build_report(cfg) -> Report | None:
-    """config 모듈을 받아 Report 를 만듭니다. 데이터가 없으면 None."""
-    rows = load_rows(cfg.RAW_FILE)
+def build_report(route, cfg) -> Report | None:
+    """노선(routes.Route) 하나의 이력 파일로 Report 를 만듭니다. 데이터가 없으면 None.
+
+    노선별로 파일이 따로 있지만, 혹시 다른 노선 행이 섞여 있어도 통계에 들어가지 않도록
+    출발/도착 공항으로 한 번 더 걸러냅니다. (노선 간 통계 혼합 방지)
+    """
+    rows = [r for r in load_rows(route.history_file)
+            if r.get("origin") == route.origin and r.get("destination") == route.destination]
     if not rows:
         return None
     latest, latest_rows = latest_run_rows(rows)
-    trips = build_trips(latest_rows, cfg.TARGET_YEAR, cfg.TARGET_MONTH,
-                        cfg.MIN_NIGHTS, cfg.MAX_NIGHTS, cfg.ALLOW_NEXT_MONTH_RETURN)
+    trips = build_trips(latest_rows, route.year, route.month,
+                        route.min_nights, route.max_nights, cfg.ALLOW_NEXT_MONTH_RETURN)
     if not trips:
         return None
 
-    series = stats.daily_min_series(rows, cfg.TARGET_YEAR, cfg.TARGET_MONTH,
-                                    cfg.MIN_NIGHTS, cfg.MAX_NIGHTS, cfg.ALLOW_NEXT_MONTH_RETURN)
+    series = stats.daily_min_series(rows, route.year, route.month,
+                                    route.min_nights, route.max_nights, cfg.ALLOW_NEXT_MONTH_RETURN)
     today = series[-1].day
     s30 = stats.window_stats(series, "최근 30일", 30, cfg.MIN_DAYS_FOR_STATS, today)
     s90 = stats.window_stats(series, "최근 90일", 90, cfg.MIN_DAYS_FOR_STATS, today)
@@ -63,9 +68,9 @@ def build_report(cfg) -> Report | None:
     current_min = min(t.price for t in trips)
 
     return Report(
-        origin=cfg.ORIGIN, destination=cfg.DESTINATION,
-        year=cfg.TARGET_YEAR, month=cfg.TARGET_MONTH,
-        min_nights=cfg.MIN_NIGHTS, max_nights=cfg.MAX_NIGHTS,
+        origin=route.origin, destination=route.destination,
+        year=route.year, month=route.month,
+        min_nights=route.min_nights, max_nights=route.max_nights,
         latest_collected_at=latest, total_rows=len(rows), latest_rows=len(latest_rows),
         trips=trips, series=series, current_min=current_min,
         s30=s30, s90=s90, s_all=s_all,

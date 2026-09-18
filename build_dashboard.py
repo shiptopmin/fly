@@ -15,6 +15,7 @@ from datetime import datetime, timedelta, timezone
 import config
 from analyzer.report import build_report
 from analyzer import stats
+from routes import load_routes
 
 KST = timezone(timedelta(hours=9))
 MEDALS = ["🥇", "🥈", "🥉", "4", "5"]
@@ -132,6 +133,7 @@ def render(rp, generated_at):
 </head>
 <body>
 <main>
+  <div class="muted"><a href="../index.html">← 전체 노선</a></div>
   <h1>✈️ Flight Price Tracker</h1>
   <div class="route">{esc(rp.origin)} → {esc(rp.destination)}</div>
   <div class="muted">{rp.year}년 {rp.month}월 · 숙박 {rp.min_nights}~{rp.max_nights}박 · 왕복 총액(성인 1명, 세금 포함)</div>
@@ -173,19 +175,95 @@ def render(rp, generated_at):
 """
 
 
-def main():
-    rp = build_report(config)
+def route_card(route, rp):
+    """홈 화면의 노선 카드 하나. rp 가 None 이면 아직 수집 전."""
+    href = f"routes/{route.slug}.html"
     if rp is None:
-        print(f"데이터 없음: {config.RAW_FILE} 가 없거나 분석할 조합이 없습니다. 먼저 `python main.py` 로 수집하세요.")
-        return 1
+        return (f'<a class="rcard" href="{href}"><div class="rtitle">{esc(route.label)}</div>'
+                f'<div class="muted">{esc(route.month_label)} · 숙박 {route.min_nights}~{route.max_nights}박</div>'
+                f'<div class="muted">아직 수집된 데이터 없음</div></a>')
+    s30 = rp.s30
+    low30 = won(s30.low) if s30.enough else f"데이터 부족 ({s30.days}일치)"
+    avg30 = f"{s30.avg:,.0f}원" if s30.enough else f"데이터 부족 ({s30.days}일치)"
+    return (f'<a class="rcard" href="{href}">'
+            f'<div class="rtitle">{esc(route.label)}</div>'
+            f'<div class="muted">{esc(route.month_label)} · 숙박 {rp.min_nights}~{rp.max_nights}박 · '
+            f'마지막 수집 {esc(fmt_kst(rp.latest_collected_at))}</div>'
+            f'<dl class="rstats">'
+            f'<dt>현재 최저가</dt><dd class="big">{won(rp.current_min)}</dd>'
+            f'<dt>최근 30일 최저</dt><dd>{esc(low30)}</dd>'
+            f'<dt>최근 30일 평균</dt><dd>{esc(avg30)}</dd>'
+            f'<dt>수집 이후 최저</dt><dd>{won(rp.s_all.low)} <span class="muted">({rp.s_all.days}일치)</span></dd>'
+            f'</dl><div class="status-line">{esc(rp.status)}</div></a>')
+
+
+def render_home(items, generated_at):
+    """items = [(route, report 또는 None), ...]"""
+    cards = "".join(route_card(route, rp) for route, rp in items)
+    return f"""<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flight Price Tracker</title>
+<style>
+  :root {{ --bg:#f6f7f9; --card:#fff; --text:#1f2937; --muted:#6b7280; --line:#e5e7eb; --accent:#2563eb; }}
+  @media (prefers-color-scheme: dark) {{ :root {{ --bg:#111827; --card:#1f2937; --text:#f3f4f6; --muted:#9ca3af; --line:#374151; --accent:#60a5fa; }} }}
+  * {{ box-sizing:border-box; }}
+  body {{ margin:0; padding:16px; background:var(--bg); color:var(--text); font-family:-apple-system,"Segoe UI","Malgun Gothic","Apple SD Gothic Neo",sans-serif; line-height:1.5; }}
+  main {{ max-width:900px; margin:0 auto; }}
+  h1 {{ font-size:1.6rem; margin:0 0 4px; }}
+  h2 {{ font-size:1.15rem; margin:24px 0 10px; border-bottom:1px solid var(--line); padding-bottom:6px; }}
+  .muted {{ color:var(--muted); font-size:.9rem; }}
+  .grid {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:12px; }}
+  .rcard {{ display:block; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px; color:inherit; text-decoration:none; }}
+  .rcard:hover {{ border-color:var(--accent); }}
+  .rtitle {{ font-size:1.2rem; font-weight:700; }}
+  .rstats {{ display:grid; grid-template-columns:max-content 1fr; gap:2px 12px; margin:10px 0 6px; }}
+  .rstats dt {{ color:var(--muted); font-size:.85rem; }} .rstats dd {{ margin:0; font-weight:600; }}
+  .rstats dd.big {{ color:var(--accent); font-size:1.3rem; }}
+  .status-line {{ font-size:.85rem; }}
+  footer {{ margin-top:32px; font-size:.85rem; color:var(--muted); border-top:1px solid var(--line); padding-top:12px; }}
+</style>
+</head>
+<body>
+<main>
+  <h1>✈️ Flight Price Tracker</h1>
+  <div class="muted">왕복 총액(성인 1명, 세금 포함) · 매일 자동 수집 · 노선을 누르면 상세 보기</div>
+  <h2>Tracked Routes ({len(items)})</h2>
+  <div class="grid">{cards}</div>
+  <footer>
+    데이터 출처: Google Flights 날짜 표(Date Grid) · 페이지 생성 {esc(generated_at)}<br>
+    "수집 이후 최저"는 이 시스템이 수집을 시작한 이후의 범위에서만 최저입니다. 수집되지 않은 기간의 가격은 추정하지 않습니다.
+  </footer>
+</main>
+</body>
+</html>
+"""
+
+
+def main():
     generated_at = datetime.now(KST).strftime("%Y-%m-%d %H:%M KST")
-    page = render(rp, generated_at)
+    routes = load_routes()
+    items = []
+    for route in routes:
+        rp = build_report(route, config)   # 노선별 이력 파일만 읽음 (노선 간 혼합 없음)
+        items.append((route, rp))
+        if rp is None:
+            print(f"{route.slug}: 데이터 없음 ({route.history_file}) - 상세 페이지 생략")
+            continue
+        os.makedirs(os.path.dirname(route.page_file), exist_ok=True)
+        page = render(rp, generated_at)
+        with open(route.page_file, "w", encoding="utf-8") as f:
+            f.write(page)
+        print(f"{route.slug}: {route.page_file} ({len(page):,} bytes) 현재 최저가 {rp.current_min:,}원 / 조합 {len(rp.trips)}개")
+
     os.makedirs(os.path.dirname(config.DASHBOARD_FILE) or ".", exist_ok=True)
+    home = render_home(items, generated_at)
     with open(config.DASHBOARD_FILE, "w", encoding="utf-8") as f:
-        f.write(page)
-    print(f"Dashboard 생성: {config.DASHBOARD_FILE} ({len(page):,} bytes)")
-    print(f"현재 최저가 {rp.current_min:,}원 / Top {config.TOP_N} {len(rp.top)}건 / 조합 {len(rp.trips)}개")
-    return 0
+        f.write(home)
+    print(f"홈 생성: {config.DASHBOARD_FILE} ({len(home):,} bytes, 노선 {len(items)}개)")
+    return 0 if any(rp is not None for _, rp in items) else 1
 
 
 if __name__ == "__main__":

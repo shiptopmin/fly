@@ -5,15 +5,17 @@
 # 노선이나 대상 월을 바꾸고 싶으면 이 파일만 수정하면 됩니다.
 # ============================================================
 
-# --- 노선 (IATA 공항 코드) ---
-ORIGIN = "ICN"          # 출발 공항 (예: ICN 인천, GMP 김포)
-DESTINATION = "KIX"     # 도착 공항 (예: KIX 오사카 간사이, NRT 도쿄 나리타)
+# --- 추적 노선 목록 (Tracker 가 매일 수집하는 노선) ---
+# 한 줄 = 노선 하나. 추가하려면 같은 형식으로 한 줄 넣으면 됩니다.
+#   origin/destination : IATA 공항 코드 (ICN 인천, GMP 김포, KIX 오사카, FUK 후쿠오카, NRT 도쿄 ...)
+#   year/month         : 추적할 여행월
+#   min_nights/max_nights : 생략하면 아래 MIN_NIGHTS / MAX_NIGHTS 기본값 사용
+ROUTES = [
+    {"origin": "ICN", "destination": "KIX", "year": 2026, "month": 10},
+    {"origin": "ICN", "destination": "FUK", "year": 2026, "month": 10},
+]
 
-# --- 대상 여행월 ---
-TARGET_YEAR = 2026
-TARGET_MONTH = 10
-
-# --- 숙박일수 범위 (Phase 2 분석에서 사용, Phase 1에서는 수집 범위 결정에 사용) ---
+# --- 숙박일수 기본 범위 (노선에 따로 적지 않으면 이 값 사용) ---
 MIN_NIGHTS = 1
 MAX_NIGHTS = 7
 
@@ -31,7 +33,7 @@ MIN_DAYS_FOR_STATS = 7    # 최근 30/90일 통계를 "충분" 하다고 볼 최
 
 # --- 저장 위치 ---
 DATA_DIR = "data"
-RAW_FILE = "data/flights_raw.csv"       # 가격 이력이 계속 누적되는 파일
+HISTORY_DIR = "data/history"            # 노선별 가격 이력: data/history/ICN-KIX.csv 처럼 노선당 파일 1개
 LAST_RUN_FILE = "data/last_run.json"    # 가장 최근 실행 요약 (덮어씀)
 DASHBOARD_FILE = "docs/index.html"      # HTML Dashboard (GitHub Pages 가 docs/ 를 서비스)
 SEARCH_DIR = "data/searches"            # 동적 검색(search.py) 결과 저장 폴더. 트래커 CSV 와 분리

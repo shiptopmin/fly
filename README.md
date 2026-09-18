@@ -10,17 +10,36 @@ Google Flights 날짜 표(Date Grid)에서 **실제로 표시된 왕복 가격�
 ## 폴더 구조
 
 ```
-config.py             설정 (노선, 대상 월, 숙박일수, 파일 경로)
-main.py               가격 수집  (python main.py / --debug)
-analyze.py            터미널 분석 출력 (python analyze.py / --all)
-build_dashboard.py    docs/index.html 생성
+config.py             설정 (추적 노선 목록 ROUTES, 숙박일수, 파일 경로)
+routes.py             노선 목록 로더 (config.ROUTES -> Route)
+main.py               가격 수집 - 노선마다 반복 (python main.py / --debug)
+analyze.py            터미널 분석 출력 - 노선별 (python analyze.py / --route ICN-KIX / --all)
+build_dashboard.py    docs/index.html(홈) + docs/routes/<노선>.html 생성
+search.py             조건 검색 (python search.py --from ICN --to KIX --depart 2026-11-01..2026-11-30 --nights 3)
+search_conditions.py  검색 조건(SearchQuery)
 collectors/           수집 계층 (google_flights.py) - 교체 가능
-analyzer/             분석 계층 (combinations, stats, report)
+analyzer/             분석 계층 (combinations, stats, report) - 노선별로 따로 계산
 storage.py            CSV 누적 저장
-data/flights_raw.csv  가격 이력 (커밋됨)
-docs/index.html       Dashboard (GitHub Pages)
+data/history/<노선>.csv   노선별 가격 이력 (커밋됨)  예: data/history/ICN-KIX.csv
+data/searches/        일회성 검색 결과 (로컬 전용, 커밋 안 함)
+docs/index.html       홈: 추적 노선 카드 (GitHub Pages)
+docs/routes/          노선별 상세 대시보드
 .github/workflows/tracker.yml   매일 09:10 KST 자동 실행
 ```
+
+## 노선 추가하기
+
+`config.py` 의 `ROUTES` 목록에 한 줄 추가하고 push 하면 다음 실행부터 수집됩니다.
+
+```python
+ROUTES = [
+    {"origin": "ICN", "destination": "KIX", "year": 2026, "month": 10},
+    {"origin": "ICN", "destination": "FUK", "year": 2026, "month": 10},
+    {"origin": "GMP", "destination": "HND", "year": 2026, "month": 12, "min_nights": 2, "max_nights": 4},
+]
+```
+
+노선마다 `data/history/<출발>-<도착>.csv` 가 따로 만들어지고 통계도 노선별로 따로 계산됩니다.
 
 ## 로컬 실행 (Anaconda Prompt)
 
