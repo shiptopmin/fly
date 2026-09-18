@@ -26,6 +26,9 @@ class Trip:
     currency: str
     includes_weekend: bool
     source_tag: str = ""      # 사이트가 붙인 표시(참고용). 우리 판단 아님
+    origin: str = ""          # 여러 목적지 검색(search.py)에서 결과를 합칠 때 구분용. 트래커에서는 비워 둠
+    destination: str = ""
+    destination_label: str = ""   # 예: "오사카(KIX)"
 
     @property
     def weekend_label(self):

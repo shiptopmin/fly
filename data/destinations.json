@@ -1,0 +1,13 @@
+{
+  "_comment": "목적지 마스터. code=IATA 공항 코드. 검색에서 --to 에 code / city_ko / city_en / country_ko / country / region 중 무엇을 써도 됩니다. enabled=false 면 그룹 검색에서 제외. priority 는 향후 Deal Finder 우선순위(1=높음).",
+  "airports": [
+    {"code": "KIX", "city_ko": "오사카", "city_en": "Osaka",     "country": "JP", "country_ko": "일본", "region": "japan", "enabled": true, "priority": 1},
+    {"code": "NRT", "city_ko": "도쿄",   "city_en": "Tokyo",     "country": "JP", "country_ko": "일본", "region": "japan", "enabled": true, "priority": 1},
+    {"code": "HND", "city_ko": "도쿄",   "city_en": "Tokyo",     "country": "JP", "country_ko": "일본", "region": "japan", "enabled": true, "priority": 1},
+    {"code": "FUK", "city_ko": "후쿠오카", "city_en": "Fukuoka", "country": "JP", "country_ko": "일본", "region": "japan", "enabled": true, "priority": 1},
+    {"code": "NGO", "city_ko": "나고야", "city_en": "Nagoya",    "country": "JP", "country_ko": "일본", "region": "japan", "enabled": true, "priority": 2},
+    {"code": "CTS", "city_ko": "삿포로", "city_en": "Sapporo",   "country": "JP", "country_ko": "일본", "region": "japan", "enabled": true, "priority": 2},
+    {"code": "OKA", "city_ko": "오키나와", "city_en": "Okinawa", "country": "JP", "country_ko": "일본", "region": "japan", "enabled": true, "priority": 2},
+    {"code": "KOJ", "city_ko": "가고시마", "city_en": "Kagoshima", "country": "JP", "country_ko": "일본", "region": "japan", "enabled": true, "priority": 3}
+  ]
+}

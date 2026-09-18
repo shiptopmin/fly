@@ -16,7 +16,9 @@ main.py               가격 수집 - 노선마다 반복 (python main.py / --de
 analyze.py            터미널 분석 출력 - 노선별 (python analyze.py / --route ICN-KIX / --all)
 build_dashboard.py    docs/index.html(홈) + docs/routes/<노선>.html 생성
 search.py             조건 검색 (python search.py --from ICN --to KIX --depart 2026-11-01..2026-11-30 --nights 3)
+                      --to 에 도시명/국가명/쉼표 목록 가능: --to 도쿄 / --to 일본 / --to KIX,FUK
 search_conditions.py  검색 조건(SearchQuery)
+destinations.py       목적지 이름 해석 (data/destinations.json 마스터: 공항/도시/국가/지역)
 collectors/           수집 계층 (google_flights.py) - 교체 가능
 analyzer/             분석 계층 (combinations, stats, report) - 노선별로 따로 계산
 storage.py            CSV 누적 저장
