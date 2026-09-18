@@ -1,3 +1,6 @@
 # Playwright: 실제 브라우저(Chromium)를 자동으로 조작해서 Google Flights 페이지를 열고
 # 화면에 표시된 가격을 읽기 위해 필요합니다. (설치 후 `python -m playwright install chromium` 도 필요)
 playwright>=1.45
+
+# Flask: 로컬 웹 검색 폼(web.py)에서만 사용. GitHub Actions 트래커에는 필요 없음.
+flask>=3

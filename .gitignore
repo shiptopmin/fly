@@ -12,3 +12,6 @@ debug_screenshots/
 
 # 동적 검색(search.py) 결과 - 로컬 전용. 트래커 이력(data/flights_raw.csv)과 섞이지 않도록 커밋하지 않음
 data/searches/
+
+# Claude Code 로컬 실행 설정 (PC 별 경로 포함) - 커밋하지 않음
+.claude/

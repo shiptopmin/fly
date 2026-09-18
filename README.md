@@ -19,6 +19,7 @@ search.py             조건 검색 (python search.py --from ICN --to KIX --depa
                       --to 에 도시명/국가명/쉼표 목록 가능: --to 도쿄 / --to 일본 / --to KIX,FUK
 search_conditions.py  검색 조건(SearchQuery)
 destinations.py       목적지 이름 해석 (data/destinations.json 마스터: 공항/도시/국가/지역)
+web.py                로컬 웹 검색 폼 (python web.py -> http://127.0.0.1:5000). search.py 의 run_search() 를 그대로 사용
 collectors/           수집 계층 (google_flights.py) - 교체 가능
 analyzer/             분석 계층 (combinations, stats, report) - 노선별로 따로 계산
 storage.py            CSV 누적 저장
@@ -52,6 +53,17 @@ python main.py            # 수집 (headless).  --debug 를 붙이면 브라우�
 python analyze.py         # 분석 결과 출력
 python build_dashboard.py # docs/index.html 생성
 ```
+
+## 웹에서 검색하기 (로컬)
+
+```bash
+python web.py
+```
+
+브라우저에서 http://127.0.0.1:5000 을 열고 출발 공항, 목적지(KIX / 도쿄 / 일본 / KIX,FUK), 출발 가능 기간,
+숙박일수, (선택) 귀국 가능 기간, 직항 여부를 입력한 뒤 "검색" 을 누릅니다.
+목적지 1곳당 페이지 로드 1~9회(1회 약 10초)가 걸리므로 결과가 나올 때까지 1~5분 기다립니다.
+서버를 켠 PC 안에서만 접속되며, 트래커 데이터(data/history/)에는 영향을 주지 않습니다.
 
 ## GitHub 에 올리고 자동 실행하기
 

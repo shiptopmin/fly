@@ -1,5 +1,5 @@
 """
-search.py - 조건 기반 동적 항공권 검색 (터미널)
+search.py - 조건 기반 동적 항공권 검색 (터미널 + web.py 가 공유하는 검색 로직)
 
 예:
     python search.py --from ICN --to KIX --depart 2026-11-01..2026-11-30 --nights 3
@@ -14,6 +14,7 @@ search.py - 조건 기반 동적 항공권 검색 (터미널)
     -> 결과 합치기 -> 가격순 정렬 -> 최저가 / Top 5 / 목적지별 최저가 / 숙박일수별 최저가
     -> --save 면 data/searches/ 에 CSV 저장
 
+핵심 로직은 run_search() 에 있고, 터미널(main)과 웹(web.py)은 이 함수를 호출해 결과를 보여주기만 합니다.
 트래커(main.py, data/history/, docs/)는 읽지도 쓰지도 않습니다.
 """
 import argparse
@@ -22,6 +23,7 @@ import logging
 import os
 import sys
 import time
+from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
 
 import config
@@ -36,20 +38,23 @@ KST = timezone(timedelta(hours=9))
 MEDALS = ["🥇", "🥈", "🥉", "4위", "5위"]
 
 
+# ----------------------------------------------------------------------
+# 입력 해석
+# ----------------------------------------------------------------------
 def parse_range(text, what):
-    """'2026-11-01..2026-11-30' 또는 '2026-11-10' -> (date, date)"""
+    """'2026-11-01..2026-11-30' 또는 '2026-11-10' -> (date, date). 잘못되면 ValueError."""
     try:
         if ".." in text:
             a, b = text.split("..", 1)
-            return date.fromisoformat(a), date.fromisoformat(b)
-        d = date.fromisoformat(text)
+            return date.fromisoformat(a.strip()), date.fromisoformat(b.strip())
+        d = date.fromisoformat(text.strip())
         return d, d
     except ValueError:
-        raise SystemExit(f"{what} 형식 오류: '{text}' (예: 2026-11-01..2026-11-30 또는 2026-11-10)")
+        raise ValueError(f"{what} 형식 오류: '{text}' (예: 2026-11-01..2026-11-30 또는 2026-11-10)")
 
 
 def parse_nights(text):
-    """'3' 또는 '2..4' -> (min, max)"""
+    """'3' 또는 '2..4' -> (min, max). 잘못되면 ValueError."""
     try:
         if ".." in text:
             a, b = text.split("..", 1)
@@ -57,24 +62,73 @@ def parse_nights(text):
         n = int(text)
         return n, n
     except ValueError:
-        raise SystemExit(f"--nights 형식 오류: '{text}' (예: 3 또는 2..4)")
+        raise ValueError(f"숙박일수 형식 오류: '{text}' (예: 3 또는 2..4)")
 
 
-def build_query(args, destination_code) -> SearchQuery:
-    dep_from, dep_to = parse_range(args.depart, "--depart")
+def make_query(origin, depart, nights, ret=None, nonstop=False, destination="XXX") -> SearchQuery:
+    """문자열 입력 -> SearchQuery (검증 포함). destination 은 목적지마다 바꿔 씁니다."""
+    dep_from, dep_to = parse_range(depart, "출발 가능 기간")
     ret_from = ret_to = None
-    if args.ret:
-        ret_from, ret_to = parse_range(args.ret, "--return")
-    min_n, max_n = parse_nights(args.nights)
-    q = SearchQuery(origin=args.origin.upper(), destination=destination_code,
+    if ret:
+        ret_from, ret_to = parse_range(ret, "귀국 가능 기간")
+    min_n, max_n = parse_nights(nights)
+    q = SearchQuery(origin=origin.strip().upper(), destination=destination,
                     depart_from=dep_from, depart_to=dep_to,
                     min_nights=min_n, max_nights=max_n,
-                    return_from=ret_from, return_to=ret_to, nonstop=args.nonstop)
-    try:
-        q.validate()
-    except ValueError as e:
-        raise SystemExit(f"조건 오류: {e}")
+                    return_from=ret_from, return_to=ret_to, nonstop=nonstop)
+    q.validate()
     return q
+
+
+# ----------------------------------------------------------------------
+# 검색 실행 (터미널/웹 공용)
+# ----------------------------------------------------------------------
+@dataclass
+class SearchOutcome:
+    base: SearchQuery                 # 목적지만 비운 기준 조건
+    airports: list                    # 검색 대상 Airport 목록 (순서대로)
+    collected: list = field(default_factory=list)   # [(Airport, CollectResult)] 실제 시도한 것
+    trips: list = field(default_factory=list)       # 가격 확인된 Trip 전부
+    blocked: bool = False
+    elapsed_sec: int = 0
+    started_at: datetime | None = None
+
+    @property
+    def ranked(self):
+        return stats.sort_trips(self.trips)
+
+    def top(self, n):
+        return stats.top_n(self.trips, n)
+
+    @property
+    def best_by_destination(self):
+        """목적지별 최저 Trip, 가격 순."""
+        by = {}
+        for t in self.ranked:
+            by.setdefault(t.destination, t)
+        return sorted(by.values(), key=lambda t: t.price)
+
+    @property
+    def ok_airports(self):
+        return [a for a, r in self.collected if r.records]
+
+    @property
+    def failed_airports(self):
+        tried_fail = [a for a, r in self.collected if not r.records]
+        not_tried = self.airports[len(self.collected):]
+        return tried_fail + not_tried
+
+    @property
+    def page_loads(self):
+        return sum(r.page_loads for _, r in self.collected)
+
+    @property
+    def missing_total(self):
+        return sum(len(r.missing_pairs) for _, r in self.collected)
+
+    @property
+    def multi(self):
+        return len(self.airports) > 1
 
 
 def records_to_trips(records, origin, airport):
@@ -90,23 +144,61 @@ def records_to_trips(records, origin, airport):
     return trips
 
 
-def save_results(args, airports, collected, started):
-    """검색 결과를 data/searches/ 에 CSV 하나로 저장 (트래커 CSV 와 분리). 목적지별로 이어 붙임."""
+def run_search(base: SearchQuery, airports, headless=True, on_progress=None) -> SearchOutcome:
+    """목적지 목록을 차례로 검색해 SearchOutcome 으로 돌려줍니다.
+
+    on_progress(i, n, airport, result, seconds) 를 주면 목적지 하나 끝날 때마다 호출합니다.
+    차단/CAPTCHA 가 감지되면 남은 목적지는 검색하지 않습니다 (우회하지 않음).
+    """
+    outcome = SearchOutcome(base=base, airports=list(airports), started_at=datetime.now(KST))
+    collector = GoogleFlightsCollector(currency=config.CURRENCY, language=config.LANGUAGE,
+                                       page_load_delay=config.PAGE_LOAD_DELAY_SEC)
+    t_start = time.time()
+    for i, airport in enumerate(outcome.airports):
+        if i > 0:
+            time.sleep(config.PAGE_LOAD_DELAY_SEC)
+        query = dataclasses.replace(base, destination=airport.code)
+        t0 = time.time()
+        result = collector.collect_query(query, headless=headless)
+        outcome.collected.append((airport, result))
+        outcome.trips.extend(records_to_trips(result.records, base.origin, airport))
+        if on_progress:
+            on_progress(i, len(outcome.airports), airport, result, time.time() - t0)
+        if result.blocked:
+            outcome.blocked = True
+            break
+    outcome.elapsed_sec = int(time.time() - t_start)
+    return outcome
+
+
+def save_outcome(outcome: SearchOutcome, to_text, nights_text):
+    """검색 결과를 data/searches/ 에 CSV 하나로 저장 (트래커 CSV 와 분리). (경로, 저장 건수)"""
     os.makedirs(config.SEARCH_DIR, exist_ok=True)
+    airports, base = outcome.airports, outcome.base
     codes = "+".join(a.code for a in airports) if len(airports) <= 3 else \
-        "".join(c for c in args.destination if c.isalnum()) or f"{len(airports)}dest"
-    dep_from, dep_to = parse_range(args.depart, "--depart")
-    name = (f"{started.strftime('%Y%m%d_%H%M%S')}_{args.origin.upper()}-{codes}"
-            f"_{dep_from}_{dep_to}_{args.nights.replace('..', '-')}n{'_nonstop' if args.nonstop else ''}.csv")
+        "".join(c for c in to_text if c.isalnum()) or f"{len(airports)}dest"
+    name = (f"{outcome.started_at.strftime('%Y%m%d_%H%M%S')}_{base.origin}-{codes}"
+            f"_{base.depart_from}_{base.depart_to}_{nights_text.replace('..', '-')}n"
+            f"{'_nonstop' if base.nonstop else ''}.csv")
     path = os.path.join(config.SEARCH_DIR, name)
     total = 0
-    for airport, result in collected:
+    for airport, result in outcome.collected:
         if result.records:
-            added, _ = storage.append_records(path, result.records, args.origin.upper(), airport.code)
+            added, _ = storage.append_records(path, result.records, base.origin, airport.code)
             total += added
     return path, total
 
 
+def plan_summary(base: SearchQuery, airports):
+    """(목적지당 조합 수, 목적지당 페이지 로드 수)"""
+    pairs = base.needed_pairs()
+    loads = len(GoogleFlightsCollector._plan_anchors(pairs))
+    return len(pairs), loads
+
+
+# ----------------------------------------------------------------------
+# 터미널 출력
+# ----------------------------------------------------------------------
 def main():
     p = argparse.ArgumentParser(description="조건 기반 항공권 최저가 검색 (Google Flights 날짜 표)")
     p.add_argument("--from", dest="origin", required=True, help="출발 공항 코드 (예: ICN)")
@@ -127,14 +219,13 @@ def main():
 
     try:
         airports = resolve(args.destination)
+        base = make_query(args.origin, args.depart, args.nights, args.ret, args.nonstop)
     except (ValueError, FileNotFoundError) as e:
-        raise SystemExit(f"목적지 오류: {e}")
+        raise SystemExit(f"입력 오류: {e}")
     if not airports:
         raise SystemExit("목적지가 비어 있습니다.")
 
-    base = build_query(args, airports[0].code)
-    pairs_per_dest = len(base.needed_pairs())
-    loads_per_dest = len(GoogleFlightsCollector._plan_anchors(base.needed_pairs()))
+    pairs_per_dest, loads_per_dest = plan_summary(base, airports)
     print("=" * 60)
     print("🔎 항공권 검색")
     print(f"조건: {base.describe().replace(base.destination, '[목적지]', 1)}")
@@ -145,46 +236,31 @@ def main():
         print("조건을 만족하는 날짜 조합이 없습니다.")
         return 1
 
-    started = datetime.now(KST)
-    collector = GoogleFlightsCollector(currency=config.CURRENCY, language=config.LANGUAGE,
-                                       page_load_delay=config.PAGE_LOAD_DELAY_SEC)
-    collected = []   # [(airport, CollectResult)]
-    trips = []
-    blocked = False
-    for i, airport in enumerate(airports):
-        if i > 0:
-            time.sleep(config.PAGE_LOAD_DELAY_SEC)
-        query = dataclasses.replace(base, destination=airport.code)
-        t0 = time.time()
-        result = collector.collect_query(query, headless=not args.debug)
-        collected.append((airport, result))
+    def progress(i, n, airport, result, seconds):
         status = "차단" if result.blocked else f"{len(result.records)}건 확인"
         if result.missing_pairs:
             status += f", {len(result.missing_pairs)}건 확인 불가"
         verified = "검증 OK" if result.semantics_verified else "검증 실패"
-        print(f"  [{i + 1}/{len(airports)}] {airport.label:<12} {status:<22} {verified}  ({time.time() - t0:.0f}초)")
+        print(f"  [{i + 1}/{n}] {airport.label:<12} {status:<22} {verified}  ({seconds:.0f}초)")
         for e in result.errors:
             print(f"        ! {e}")
-        trips.extend(records_to_trips(result.records, base.origin, airport))
         if result.blocked:
-            blocked = True
             print("  차단/CAPTCHA 감지 - 남은 목적지 검색을 중단합니다 (우회하지 않음).")
-            break
 
-    elapsed = (datetime.now(KST) - started).seconds
+    outcome = run_search(base, airports, headless=not args.debug, on_progress=progress)
+
     print("-" * 60)
-    ok_dests = [a for a, r in collected if r.records]
-    fail_dests = [a for a, r in collected if not r.records] + airports[len(collected):]
-    print(f"수집 결과: {len(trips)}건 / 목적지 {len(ok_dests)}곳 성공"
-          + (f", {len(fail_dests)}곳 확인 불가 ({', '.join(a.label for a in fail_dests)})" if fail_dests else "")
-          + f" / 총 {sum(r.page_loads for _, r in collected)}회 로드, {elapsed}초")
+    fails = outcome.failed_airports
+    print(f"수집 결과: {len(outcome.trips)}건 / 목적지 {len(outcome.ok_airports)}곳 성공"
+          + (f", {len(fails)}곳 확인 불가 ({', '.join(a.label for a in fails)})" if fails else "")
+          + f" / 총 {outcome.page_loads}회 로드, {outcome.elapsed_sec}초")
     print("가격 의미: Google Flights 날짜 표 셀 = 해당 출발/귀국 조합의 왕복 총액 (성인 1명, 세금 포함)")
-    if not trips:
+    if not outcome.trips:
         print("가격을 확인한 조합이 없습니다.")
         return 1
 
-    multi = len(airports) > 1
-    ranked = stats.sort_trips(trips)
+    multi = outcome.multi
+    ranked = outcome.ranked
     best = ranked[0]
 
     def dest(t):
@@ -194,30 +270,26 @@ def main():
     print(f"최저가: {best.price:,}원  {dest(best)}{best.period_label}  {best.nights}박  {best.weekend_label}")
     print("-" * 60)
     print(f"🏆 Top {args.top}  (가격 낮은 순 → 숙박 짧은 순 → 출발일 빠른 순)")
-    for i, t in enumerate(stats.top_n(trips, args.top)):
+    for i, t in enumerate(outcome.top(args.top)):
         mark = MEDALS[i] if i < len(MEDALS) else f"{i + 1}위"
         tag = f"  (Google 표시: {t.source_tag})" if t.source_tag else ""
         print(f"  {mark}  {dest(t)}{t.period_label}  {t.nights}박  {t.price:>9,}원  {t.weekend_label}{tag}")
     if multi:
         print("-" * 60)
         print("목적지별 최저가")
-        by_dest = {}
-        for t in ranked:
-            by_dest.setdefault(t.destination, t)
-        for t in sorted(by_dest.values(), key=lambda t: t.price):
+        for t in outcome.best_by_destination:
             print(f"  {t.destination_label:<12} {t.price:>9,}원   {t.period_label}  {t.nights}박  {t.weekend_label}")
-        for a in fail_dests:
+        for a in fails:
             print(f"  {a.label:<12} 해당 날짜 가격 확인 불가")
     if base.min_nights != base.max_nights:
         print("-" * 60)
         print("숙박일수별 최저가")
-        for n, t in stats.cheapest_by_nights(trips).items():
+        for n, t in stats.cheapest_by_nights(outcome.trips).items():
             print(f"  {n}박 → {t.price:>9,}원   {dest(t)}{t.period_label}  {t.weekend_label}")
-    missing_total = sum(len(r.missing_pairs) for _, r in collected)
-    if missing_total:
+    if outcome.missing_total:
         print("-" * 60)
-        print(f"해당 날짜 가격 확인 불가: {missing_total}건")
-        for a, r in collected:
+        print(f"해당 날짜 가격 확인 불가: {outcome.missing_total}건")
+        for a, r in outcome.collected:
             if r.missing_pairs:
                 print(f"  {a.label}: " + ", ".join(f"{d.month}/{d.day}→{x.month}/{x.day}" for d, x in r.missing_pairs[:10])
                       + (" ..." if len(r.missing_pairs) > 10 else ""))
@@ -227,11 +299,11 @@ def main():
         for t in ranked:
             print(f"  {dest(t)}{t.period_label}  {t.nights}박  {t.price:>9,}원  {t.weekend_label}")
     if args.save:
-        path, added = save_results(args, airports, collected, started)
+        path, added = save_outcome(outcome, args.destination, args.nights)
         print("-" * 60)
         print(f"저장: {path} ({added}건)")
     print("=" * 60)
-    return 1 if blocked else 0
+    return 1 if outcome.blocked else 0
 
 
 if __name__ == "__main__":
