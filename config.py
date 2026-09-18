@@ -31,6 +31,24 @@ LANGUAGE = "ko"             # 페이지 언어 (셀 라벨 파싱이 한국어 �
 TOP_N = 5                 # 가장 저렴한 조합 몇 개를 보여줄지
 MIN_DAYS_FOR_STATS = 7    # 최근 30/90일 통계를 "충분" 하다고 볼 최소 수집일 수 (그 미만이면 데이터 부족 표시)
 
+# --- 좋은 가격 판정 (Phase 7-1) ---
+# 이력이 이만큼 쌓이기 전에는 "좋은 가격" 판단을 하지 않습니다 (HOLD / 판단 보류).
+MIN_DAYS_30 = 7      # 최근 30일 창 안에 수집일이 7일 이상이어야 30일 지표 사용 (등급 OK)
+MIN_DAYS_90 = 14     # 최근 90일 창 안에 14일 이상이어야 90일 지표 사용
+MIN_DAYS_PAIR = 5    # 동일 출발일/귀국일 조합의 이력이 5일 이상이어야 "동일 일정" 비교
+MIN_DAYS_RICH = 30   # 전체 수집일 30일 이상(+90일 조건)이면 등급 RICH
+
+# 판정 규칙. 값은 절대 기준이 아니라 운영하며 조정하는 설정값입니다.
+DEAL_RULES = {
+    "below_avg30_pct": 15,        # 비교 기준의 30일 평균보다 이 % 이상 낮으면 DEAL
+    "watch_below_avg30_pct": 5,   # 이 % 이상 ~ 위 값 미만 낮으면 WATCH
+    "below_low30": True,          # 30일 최저 이하(동률 포함)이면 DEAL
+    "below_low_all": True,        # 수집 이후 최저 이하이면 DEAL (수집일 MIN_DAYS_30 이상일 때만)
+    "below_pair_low": True,       # 동일 일정의 과거 최저보다 낮으면 DEAL (조합 이력 MIN_DAYS_PAIR 이상일 때만)
+    "drop_1d_pct": 10,            # 직전 수집일 대비 이 % 이상 하락이면 WATCH
+    "noise_pct": 3,               # 이 % 미만의 차이는 '변화 없음(잡음 범위)'으로 취급
+}
+
 # --- 저장 위치 ---
 DATA_DIR = "data"
 HISTORY_DIR = "data/history"            # 노선별 가격 이력: data/history/ICN-KIX.csv 처럼 노선당 파일 1개
