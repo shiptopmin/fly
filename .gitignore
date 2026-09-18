@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# 비밀 정보 (API Key, Token 등) - 절대 커밋하지 않음
+.env
+
+# Playwright 디버그 산출물
+debug_screenshots/

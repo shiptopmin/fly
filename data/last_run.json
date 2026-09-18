@@ -1,0 +1,24 @@
+{
+  "source": "google_flights",
+  "origin": "ICN",
+  "destination": "KIX",
+  "target_month": "2026-10",
+  "nights_range": [
+    1,
+    7
+  ],
+  "started_at": "2026-09-18T15:56:12+09:00",
+  "finished_at": "2026-09-18T15:57:36+09:00",
+  "headless": true,
+  "records_collected": 189,
+  "records_added_to_csv": 189,
+  "duplicates_skipped": 0,
+  "missing_pairs": [],
+  "price_semantics": "Google Flights 날짜 표 셀 가격 = 해당 출발일/귀국일 조합의 왕복 총액 (성인 1명, 필수 세금·수수료 포함, 검색 결과 중 최저가) [교차검증 9/9 페이지 성공]",
+  "semantics_verified": true,
+  "blocked": false,
+  "errors": [],
+  "page_loads": 9,
+  "grid_steps": 0,
+  "total_rows_in_csv": 567
+}

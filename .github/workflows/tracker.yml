@@ -1,0 +1,79 @@
+# .github/workflows/tracker.yml - 매일 자동으로 가격 수집 -> 분석 -> Dashboard 갱신 -> 커밋
+#
+# 흐름:
+#   GitHub Actions (매일 09:10 KST 예약, 또는 수동 실행)
+#     -> python main.py            (Google Flights 날짜 표에서 실제 가격 수집, data/flights_raw.csv 누적)
+#     -> python build_dashboard.py (docs/index.html 생성)
+#     -> data/ 와 docs/ 변경분을 커밋/푸시
+#     -> GitHub Pages 가 docs/index.html 을 서비스
+#
+# 주의:
+#   - 예약 실행(cron)은 UTC 기준입니다. 00:10 UTC = 09:10 KST. 정각(09:00)을 피해 10분으로 잡았습니다.
+#   - GitHub 의 예약 실행은 수 분~수십 분 늦게 시작될 수 있습니다. 실제 실행 시각은 페이지의
+#     "마지막 업데이트" 에 기록됩니다.
+#   - 수집이 실패(차단/CAPTCHA 등)해도 그 사실을 data/last_run.json 에 남기고 커밋한 뒤,
+#     워크플로는 실패로 표시합니다. 차단을 우회하는 처리는 없습니다.
+
+name: Flight Price Tracker
+
+on:
+  schedule:
+    - cron: "10 0 * * *"      # 매일 00:10 UTC = 09:10 KST
+  workflow_dispatch:          # Actions 탭에서 "Run workflow" 버튼으로 수동 실행
+
+permissions:
+  contents: write             # 수집 결과를 저장소에 커밋하기 위해 필요
+
+concurrency:
+  group: tracker
+  cancel-in-progress: false   # 동시에 두 번 돌지 않도록 (커밋 충돌 방지)
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
+
+      - name: Collect prices (headless)
+        id: collect
+        continue-on-error: true       # 실패해도 다음 단계(결과 기록/커밋)는 진행
+        run: python main.py
+
+      - name: Show collection summary
+        run: cat data/last_run.json || echo "last_run.json not found"
+
+      - name: Build dashboard
+        run: python build_dashboard.py
+
+      - name: Commit and push results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data docs
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: update prices $(date -u +'%Y-%m-%d %H:%M UTC')"
+            git pull --rebase origin ${{ github.ref_name }}
+            git push
+          fi
+
+      - name: Fail the run if collection failed
+        if: steps.collect.outcome == 'failure'
+        run: |
+          echo "::error::Price collection failed in GitHub Actions environment. See data/last_run.json."
+          exit 1
