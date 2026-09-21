@@ -49,6 +49,21 @@ DEAL_RULES = {
     "noise_pct": 3,               # 이 % 미만의 차이는 '변화 없음(잡음 범위)'으로 취급
 }
 
+# --- Broad Probe (Phase 7-3) ---
+# 목적을 분명히 합니다. Probe 는 "최저가를 찾는 것"이 아니라
+# "목적지마다 매일 같은 자리를 재서 어제와 비교할 수 있는 시계열을 만드는 것"입니다.
+# 그래서 기준일(anchor)이 달마다 한 번만 바뀌도록 달력에서 결정론적으로 정합니다.
+PROBE_ORIGIN = "ICN"
+PROBE_DESTINATIONS = "일본"    # destinations.py 가 해석 (공항코드 / 도시 / 국가 / 쉼표목록)
+PROBE_MONTHS_AHEAD = 1         # 몇 달 뒤를 볼지. 검증 단계에서는 1 (Deep Tracker 와 같은 달이라 비교 가능)
+PROBE_WEEKDAY = 1              # 기준 출발 요일 (0=월, 1=화). 실측상 화/수 출발이 저렴했음
+PROBE_WEEK_OF_MONTH = 2        # 그 달의 몇 번째 해당 요일
+PROBE_NIGHTS = 3               # 기준 숙박일수 (그리드가 앞뒤 날짜와 1~7박을 함께 보여줌)
+PROBE_MAX_CANDIDATES = 3       # 정밀 확인으로 넘길 후보 상한 (하루 검색량 상한)
+PROBE_CONFIRM_SPAN_DAYS = 10   # 정밀 확인 시 후보 출발일 앞뒤로 볼 날짜 폭
+PROBE_DIR = "data/probes"                  # 목적지별 Probe 시계열 (Deep Tracker 이력과 분리)
+PROBE_FEED_DIR = "data/probes/feed"        # 실행 결과 요약 (후보/정밀확인/최종판정)
+
 # --- 저장 위치 ---
 DATA_DIR = "data"
 HISTORY_DIR = "data/history"            # 노선별 가격 이력: data/history/ICN-KIX.csv 처럼 노선당 파일 1개

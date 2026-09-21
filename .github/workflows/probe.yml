@@ -1,0 +1,71 @@
+# .github/workflows/probe.yml - Broad Probe 를 매일 실행해 목적지별 비교 가능한 시계열을 쌓습니다.
+#
+# Deep Tracker(tracker.yml)와 완전히 분리된 워크플로입니다.
+#   - 건드리는 데이터: data/probes/, data/diagnostics/
+#   - 건드리지 않는 데이터: data/history/ (Deep Tracker 이력), docs/ (대시보드)
+#
+# 주의:
+#   - tracker.yml 과 시간을 벌려 두었지만, GitHub 예약 실행은 수 시간 지연될 수 있어
+#     두 워크플로가 겹칠 수 있습니다. 그래서 push 전에 항상 rebase 합니다.
+#   - 수집이 실패하거나 차단되면 그 사실을 기록하고 워크플로를 실패로 표시합니다. 우회하지 않습니다.
+
+name: Broad Probe
+
+on:
+  schedule:
+    - cron: "0 2 * * *"       # 02:00 UTC = 11:00 KST (실제 시작은 지연될 수 있음)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
+
+      - name: Run broad probe
+        id: probe
+        continue-on-error: true
+        run: python probe.py
+
+      - name: Show summary
+        run: cat data/probes/feed/latest.json || echo "latest.json not found"
+
+      - name: Commit probe data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/probes data/diagnostics
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: probe $(date -u +'%Y-%m-%d %H:%M UTC')"
+            git pull --rebase origin ${{ github.ref_name }}
+            git push
+          fi
+
+      - name: Fail the run if the probe failed
+        if: steps.probe.outcome == 'failure'
+        run: |
+          echo "::error::Broad probe failed. See data/probes/feed/latest.json."
+          exit 1

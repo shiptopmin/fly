@@ -1,0 +1,9 @@
+﻿checked_at,env,context,origin,destination,anchor_dep,anchor_ret,ok,problem,selected_dep,selected_ret,selected_price,list_min,diff,diff_pct,source_tag,selected_cells,rechecked,recovered_after_recheck
+2026-09-21T14:17:18+09:00,local,probe,ICN,FUK,2026-10-13,2026-10-16,True,,2026-10-13,2026-10-16,278500,278500,0,0.0,,1,False,False
+2026-09-21T14:17:18+09:00,local,probe,ICN,HND,2026-10-13,2026-10-16,True,,2026-10-13,2026-10-16,551000,551000,0,0.0,,1,False,False
+2026-09-21T14:17:18+09:00,local,probe,ICN,KIX,2026-10-13,2026-10-16,True,,2026-10-13,2026-10-16,280500,280500,0,0.0,저가,1,False,False
+2026-09-21T14:17:18+09:00,local,probe,ICN,NRT,2026-10-13,2026-10-16,True,,2026-10-13,2026-10-16,334051,334051,0,0.0,,1,False,False
+2026-09-21T14:17:18+09:00,local,probe,ICN,CTS,2026-10-13,2026-10-16,True,,2026-10-13,2026-10-16,435664,435664,0,0.0,,1,False,False
+2026-09-21T14:17:18+09:00,local,probe,ICN,NGO,2026-10-13,2026-10-16,True,,2026-10-13,2026-10-16,407200,407200,0,0.0,,1,False,False
+2026-09-21T14:17:18+09:00,local,probe,ICN,OKA,2026-10-13,2026-10-16,True,,2026-10-13,2026-10-16,425100,425100,0,0.0,최저가,1,False,False
+2026-09-21T14:17:18+09:00,local,probe,ICN,KOJ,2026-10-13,2026-10-16,True,,2026-10-13,2026-10-16,470900,470900,0,0.0,,1,False,False

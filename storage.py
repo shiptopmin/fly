@@ -91,6 +91,7 @@ def count_rows(path):
 SEMANTICS_FIELDS = [
     "checked_at",        # 검증 시각 (KST)
     "env",               # actions / local  (실행 환경이 달라 가격이 다를 수 있으므로 구분)
+    "context",           # tracker / probe / confirm  (어느 흐름에서 나온 검증인지)
     "origin",
     "destination",
     "anchor_dep",        # 검색 기준 출발일
@@ -110,7 +111,7 @@ SEMANTICS_FIELDS = [
 ]
 
 
-def append_semantics_checks(path, checks, origin, destination, checked_at, env):
+def append_semantics_checks(path, checks, origin, destination, checked_at, env, context="tracker"):
     """검증 기록을 append-only CSV 에 추가합니다. (추가된 건수)
 
     가격을 바꾸거나 추정하지 않습니다. 관측된 두 가격을 그대로 남길 뿐입니다.
@@ -125,7 +126,7 @@ def append_semantics_checks(path, checks, origin, destination, checked_at, env):
             writer.writeheader()
         for c in checks:
             row = {k: c.get(k, "") for k in SEMANTICS_FIELDS}
-            row.update({"checked_at": checked_at, "env": env,
+            row.update({"checked_at": checked_at, "env": env, "context": context,
                         "origin": origin, "destination": destination})
             writer.writerow(row)
     return len(checks)
