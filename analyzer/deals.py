@@ -52,6 +52,25 @@ class Verdict:
     def summary(self) -> str:
         return f"[{self.label}] " + " / ".join(self.reasons)
 
+    @property
+    def headline(self) -> str:
+        """표에 넣을 한 줄 요약. 문장을 다시 파싱하지 않고 metrics/passed 에서 만듭니다."""
+        if self.label == LABEL_HOLD:
+            return self.reasons[0] if self.reasons else "이력 부족으로 판단 보류"
+        bits = []
+        p = self.metrics.get("pct_vs_avg30")
+        if p is not None:
+            bits.append(f"30일 평균보다 {abs(p):.1f}% " + ("낮음" if p > 0 else "높음"))
+        if "below_low_all" in self.passed:
+            bits.append("수집 이후 최저")
+        elif "below_low30" in self.passed:
+            bits.append("30일 최저 아래")
+        if "below_pair_low" in self.passed:
+            bits.append("동일 일정 과거 최저 아래")
+        if "drop_1d_pct" in self.passed:
+            bits.append("전일 대비 하락")
+        return " / ".join(bits) if bits else "평소 수준"
+
 
 # ----------------------------------------------------------------------
 # 정확한 비율 계산 (부동소수점 오차 없음)

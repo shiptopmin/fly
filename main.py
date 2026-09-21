@@ -14,6 +14,7 @@ main.py - 항공권 가격 추적기 (Tracker) : config.ROUTES 의 노선을 차
 """
 import argparse
 import logging
+import os
 import sys
 import time
 from datetime import datetime, timedelta, timezone
@@ -66,6 +67,14 @@ def collect_route(collector, route, headless, log):
     else:
         log.warning("No records collected for %s - nothing saved", route.label)
 
+    # 가격 의미 검증 기록 누적 (진단용). 수집된 가격은 손대지 않습니다.
+    env = "actions" if os.environ.get("GITHUB_ACTIONS") == "true" else "local"
+    storage.append_semantics_checks(config.SEMANTICS_LOG, result.semantics_checks,
+                                    route.origin, route.destination, started.isoformat(), env)
+    checks = result.semantics_checks
+    mismatches = [c for c in checks if not c["ok"]]
+    price_mismatches = [c for c in checks if c.get("problem") == "price_mismatch"]
+
     summary = {
         "route": route.slug,
         "origin": route.origin,
@@ -83,6 +92,9 @@ def collect_route(collector, route, headless, log):
         "blocked": result.blocked,
         "errors": result.errors,
         "page_loads": result.page_loads,
+        "semantics_checks": len(checks),
+        "semantics_mismatches": len(mismatches),
+        "price_mismatches": len(price_mismatches),
         "history_file": route.history_file,
         "total_rows_in_csv": storage.count_rows(route.history_file),
     }
@@ -99,7 +111,9 @@ def collect_route(collector, route, headless, log):
           f"/ 누적 {summary['total_rows_in_csv']}행")
     if result.missing_pairs:
         print(f"해당 날짜 가격 확인 불가: {len(result.missing_pairs)}건 (data/last_run.json 참고)")
-    print(f"가격 의미 교차검증: {'성공' if result.semantics_verified else '실패/미확인'}")
+    print(f"가격 의미 교차검증: {'성공' if result.semantics_verified else '실패/미확인'} "
+          f"(검증 {len(checks)}페이지 중 불일치 {len(mismatches)}건"
+          + (f", 그중 price_mismatch {len(price_mismatches)}건" if price_mismatches else "") + ")")
     for e in result.errors:
         print(f"  - {e}")
     if result.records:

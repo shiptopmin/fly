@@ -28,8 +28,9 @@ from datetime import date, datetime, timedelta, timezone
 
 import config
 import storage
-from analyzer import stats
+from analyzer import deals, stats
 from analyzer.combinations import Trip, includes_weekend
+from analyzer.history import RouteHistory, thresholds_from_config
 from collectors.google_flights import GoogleFlightsCollector
 from destinations import resolve
 from search_conditions import SearchQuery
@@ -189,6 +190,28 @@ def save_outcome(outcome: SearchOutcome, to_text, nights_text):
     return path, total
 
 
+def build_histories(origin, airports, today=None):
+    """목적지별 트래커 이력(RouteHistory)을 모읍니다.
+
+    Tracker 가 쌓은 data/history/<노선>.csv 만 읽습니다. 검색 결과를 이력에 섞지 않습니다.
+    이력 파일이 없는 목적지는 비어 있는 이력이 되어 판정이 HOLD 로 나옵니다.
+    """
+    today = today or datetime.now(KST).date()
+    th = thresholds_from_config(config)
+    return {a.code: RouteHistory.from_file(
+        os.path.join(config.HISTORY_DIR, f"{origin}-{a.code}.csv"), origin, a.code, today, th)
+        for a in airports}
+
+
+def judge_trip(trip, histories):
+    """조합 하나를 과거 가격과 비교해 판정합니다. 이력이 없으면 HOLD 입니다."""
+    h = histories.get(trip.destination)
+    if h is None:
+        return None
+    return deals.judge(trip.price, h, nights=trip.nights, dep=trip.departure_date,
+                       ret=trip.return_date, rules=config.DEAL_RULES)
+
+
 def plan_summary(base: SearchQuery, airports):
     """(목적지당 조합 수, 목적지당 페이지 로드 수)"""
     pairs = base.needed_pairs()
@@ -210,6 +233,8 @@ def main():
     p.add_argument("--nonstop", action="store_true", help="직항만")
     p.add_argument("--top", type=int, default=config.TOP_N, help="상위 몇 개 (기본 5)")
     p.add_argument("--all", action="store_true", help="모든 조합 출력")
+    p.add_argument("--compare", action="store_true",
+                   help="트래커 이력(data/history/)과 비교해 좋은 가격인지 함께 표시")
     p.add_argument("--save", action="store_true", help=f"결과를 {config.SEARCH_DIR}/ 에 CSV 저장")
     p.add_argument("--debug", action="store_true", help="브라우저 표시 + 상세 로그")
     args = p.parse_args()
@@ -262,9 +287,16 @@ def main():
     multi = outcome.multi
     ranked = outcome.ranked
     best = ranked[0]
+    histories = build_histories(base.origin, airports) if args.compare else {}
 
     def dest(t):
         return f"{t.destination_label:<12} " if multi else ""
+
+    def verdict_line(t, indent=" " * 6):
+        if not args.compare:
+            return None
+        v = judge_trip(t, histories)
+        return None if v is None else f"{indent}{v.label}: {v.headline}"
 
     print("=" * 60)
     print(f"최저가: {best.price:,}원  {dest(best)}{best.period_label}  {best.nights}박  {best.weekend_label}")
@@ -274,11 +306,17 @@ def main():
         mark = MEDALS[i] if i < len(MEDALS) else f"{i + 1}위"
         tag = f"  (Google 표시: {t.source_tag})" if t.source_tag else ""
         print(f"  {mark}  {dest(t)}{t.period_label}  {t.nights}박  {t.price:>9,}원  {t.weekend_label}{tag}")
+        line = verdict_line(t)
+        if line:
+            print(line)
     if multi:
         print("-" * 60)
         print("목적지별 최저가")
         for t in outcome.best_by_destination:
             print(f"  {t.destination_label:<12} {t.price:>9,}원   {t.period_label}  {t.nights}박  {t.weekend_label}")
+            line = verdict_line(t)
+            if line:
+                print(line)
         for a in fails:
             print(f"  {a.label:<12} 해당 날짜 가격 확인 불가")
     if base.min_nights != base.max_nights:

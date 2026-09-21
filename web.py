@@ -17,7 +17,7 @@ from flask import Flask, render_template_string, request
 
 import config
 from destinations import resolve
-from search import make_query, plan_summary, run_search, save_outcome
+from search import build_histories, judge_trip, make_query, plan_summary, run_search, save_outcome
 
 app = Flask(__name__)
 search_lock = threading.Lock()   # 검색 동시 실행 방지
@@ -51,6 +51,10 @@ PAGE = """<!DOCTYPE html>
   td.price { font-weight:700; white-space:nowrap; }
   .badge { display:inline-block; padding:1px 8px; border-radius:999px; font-size:.78rem; }
   .wk { background:#fee2e2; color:#991b1b; } .wd { background:#dcfce7; color:#166534; }
+  .vlabel { display:inline-block; padding:1px 7px; border-radius:6px; font-size:.75rem; font-weight:700; }
+  .vlabel.deal { background:#dcfce7; color:#166534; }
+  .vlabel.watch { background:#fef9c3; color:#854d0e; }
+  .vlabel.normal, .vlabel.hold { background:var(--bg); color:var(--muted); border:1px solid var(--line); }
   .ext { font-size:.75rem; color:var(--muted); margin-left:6px; }
   details { margin-top:8px; } summary { cursor:pointer; }
   #loading { display:none; margin-top:12px; padding:10px; background:var(--card); border:1px solid var(--line); border-radius:8px; }
@@ -102,23 +106,27 @@ PAGE = """<!DOCTYPE html>
        <span class="badge {{ 'wk' if best.includes_weekend else 'wd' }}">{{ '주말 포함' if best.includes_weekend else '평일' }}</span></p>
 
     <h2>🏆 Top {{ top_n }}</h2>
-    <table><thead><tr><th></th>{% if o.multi %}<th>목적지</th>{% endif %}<th>기간</th><th>숙박</th><th>왕복 총액</th><th>구분</th></tr></thead><tbody>
+    <table><thead><tr><th></th>{% if o.multi %}<th>목적지</th>{% endif %}<th>기간</th><th>숙박</th><th>왕복 총액</th><th>구분</th><th>이력 비교</th></tr></thead><tbody>
     {% for t in o.top(top_n) %}
       <tr><td>{{ medals[loop.index0] if loop.index0 < medals|length else loop.index }}</td>
           {% if o.multi %}<td>{{ t.destination_label }}</td>{% endif %}
           <td>{{ t.period_label }}</td><td>{{ t.nights }}박</td><td class="price">{{ "{:,}".format(t.price) }}원</td>
           <td><span class="badge {{ 'wk' if t.includes_weekend else 'wd' }}">{{ '주말 포함' if t.includes_weekend else '평일' }}</span>
-              {% if t.source_tag %}<span class="ext">Google 표시: {{ t.source_tag }}</span>{% endif %}</td></tr>
+              {% if t.source_tag %}<span class="ext">Google 표시: {{ t.source_tag }}</span>{% endif %}</td>
+          <td>{% set v = verdict_of(t) %}{% if v %}<span class="vlabel {{ v.label|lower }}">{{ v.label }}</span>
+              <span class="ext">{{ v.headline }}</span>{% else %}<span class="muted">-</span>{% endif %}</td></tr>
     {% endfor %}
     </tbody></table>
     <div class="muted" style="font-size:.8rem">정렬: 가격 낮은 순 → 숙박 짧은 순 → 출발일 빠른 순. "Google 표시"는 Google 자체 기준(외부 기준)입니다.</div>
 
     {% if o.multi %}
     <h2>목적지별 최저가</h2>
-    <table><thead><tr><th>목적지</th><th>왕복 총액</th><th>기간</th><th>숙박</th><th>구분</th></tr></thead><tbody>
+    <table><thead><tr><th>목적지</th><th>왕복 총액</th><th>기간</th><th>숙박</th><th>구분</th><th>이력 비교</th></tr></thead><tbody>
     {% for t in o.best_by_destination %}
       <tr><td>{{ t.destination_label }}</td><td class="price">{{ "{:,}".format(t.price) }}원</td><td>{{ t.period_label }}</td><td>{{ t.nights }}박</td>
-          <td><span class="badge {{ 'wk' if t.includes_weekend else 'wd' }}">{{ '주말 포함' if t.includes_weekend else '평일' }}</span></td></tr>
+          <td><span class="badge {{ 'wk' if t.includes_weekend else 'wd' }}">{{ '주말 포함' if t.includes_weekend else '평일' }}</span></td>
+          <td>{% set v = verdict_of(t) %}{% if v %}<span class="vlabel {{ v.label|lower }}">{{ v.label }}</span>
+              <span class="ext">{{ v.headline }}</span>{% else %}<span class="muted">-</span>{% endif %}</td></tr>
     {% endfor %}
     {% for a in o.failed_airports %}
       <tr><td>{{ a.label }}</td><td colspan="4" class="muted">해당 날짜 가격 확인 불가</td></tr>
@@ -209,8 +217,23 @@ def search():
     from analyzer import stats
     by_nights = stats.cheapest_by_nights(outcome.trips) if outcome.trips else {}
     cond = base.describe().replace(base.destination, f["destination"], 1)
+
+    # 화면에 보이는 조합만 트래커 이력과 비교합니다 (이력이 없으면 HOLD 로 표시됨).
+    histories = build_histories(base.origin, airports) if outcome.trips else {}
+    verdicts = {}
+    for t in list(outcome.top(config.TOP_N)) + list(outcome.best_by_destination):
+        key = (t.destination, t.departure_date, t.return_date)
+        if key not in verdicts:
+            v = judge_trip(t, histories)
+            if v is not None:
+                verdicts[key] = v
+
+    def verdict_of(t):
+        return verdicts.get((t.destination, t.departure_date, t.return_date))
+
     return render_template_string(PAGE, f=f, o=outcome, error=None, cond=cond,
-                                  top_n=config.TOP_N, medals=MEDALS, by_nights=by_nights, saved=saved)
+                                  top_n=config.TOP_N, medals=MEDALS, by_nights=by_nights,
+                                  saved=saved, verdict_of=verdict_of)
 
 
 if __name__ == "__main__":

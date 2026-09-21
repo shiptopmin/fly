@@ -356,10 +356,14 @@ class GoogleFlightsCollector(BaseCollector):
             m = DATE_RANGE_RE.search(label)
             if not pm or not m:
                 continue
+            tag = ""
+            for t in (t.strip() for t in label.split(",")):
+                if t in ("저가", "최저가"):
+                    tag = t
             out.append({"price": int(pm.group(1).replace(",", "")),
                         "dep": self._to_date(int(m.group(1)), int(m.group(2)), today),
                         "ret": self._to_date(int(m.group(3)), int(m.group(4)), today),
-                        "label": label})
+                        "tag": tag, "label": label})
         return out
 
     def _check_semantics(self, dialog, list_min_price, anchor_dep, anchor_ret):
@@ -383,6 +387,38 @@ class GoogleFlightsCollector(BaseCollector):
         elif match["price"] != list_min_price:
             info["problem"] = "price_mismatch"
         return info["problem"] is None, info
+
+    @staticmethod
+    def _check_record(info, anchor_dep, anchor_ret, ok, rechecked, recovered):
+        """검증 결과 한 건을 나중에 분석할 수 있는 형태로 남깁니다.
+
+        어느 쪽 가격도 고치거나 추정하지 않습니다. 선택 셀 가격과 목록 최저가를
+        관측된 그대로 적고, 차이는 참고용으로 함께 계산해 둡니다.
+        """
+        cells = info.get("cells") or []
+        sel = info.get("match") or (cells[0] if cells else None)
+        list_min = info.get("list_min")
+        sel_price = sel["price"] if sel else None
+        diff = diff_pct = None
+        if sel_price is not None and list_min:
+            diff = sel_price - list_min
+            diff_pct = round(diff / list_min * 100, 2)
+        return {
+            "anchor_dep": anchor_dep.isoformat(),
+            "anchor_ret": anchor_ret.isoformat(),
+            "ok": ok,
+            "problem": info.get("problem") or "",
+            "selected_dep": sel["dep"].isoformat() if sel and sel["dep"] else "",
+            "selected_ret": sel["ret"].isoformat() if sel and sel["ret"] else "",
+            "selected_price": sel_price,
+            "list_min": list_min,
+            "diff": diff,
+            "diff_pct": diff_pct,
+            "source_tag": sel.get("tag", "") if sel else "",
+            "selected_cells": len(cells),
+            "rechecked": rechecked,
+            "recovered_after_recheck": recovered,
+        }
 
     @staticmethod
     def _describe_check(info, anchor_dep, anchor_ret):
@@ -409,18 +445,25 @@ class GoogleFlightsCollector(BaseCollector):
         3) 재확인으로 회복된 경우에도 기록을 남겨 이 현상의 빈도를 추적합니다.
         """
         ok, info = self._check_semantics(dialog, list_min_price, anchor_dep, anchor_ret)
+        rechecked = recovered = False
         if not ok:
             first_desc = self._describe_check(info, anchor_dep, anchor_ret)
             log.warning("Price semantics check failed, rechecking once: %s", first_desc)
+            rechecked = True
             time.sleep(SEMANTICS_RECHECK_DELAY_SEC)
             fresh_min = self._read_list_min_price(page, timeout_sec=5)
             if fresh_min is not None:
                 list_min_price = fresh_min
             ok, info = self._check_semantics(dialog, list_min_price, anchor_dep, anchor_ret)
             if ok:
+                recovered = True
                 msg = f"[NOTE] 선택 셀 재확인 후 일치 (일시적 그리드 불안정): 1차 {first_desc}"
                 log.warning(msg)
                 result.errors.append(msg)
+
+        # 진단 기록: 가격은 손대지 않고, 검증 결과와 양쪽 가격을 그대로 남깁니다.
+        result.semantics_checks.append(
+            self._check_record(info, anchor_dep, anchor_ret, ok, rechecked, recovered))
 
         krw_text = ""
         try:

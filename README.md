@@ -15,13 +15,14 @@ routes.py             노선 목록 로더 (config.ROUTES -> Route)
 main.py               가격 수집 - 노선마다 반복 (python main.py / --debug)
 analyze.py            터미널 분석 출력 - 노선별 (python analyze.py / --route ICN-KIX / --all)
 build_dashboard.py    docs/index.html(홈) + docs/routes/<노선>.html 생성
-search.py             조건 검색 (python search.py --from ICN --to KIX --depart 2026-11-01..2026-11-30 --nights 3)
+search.py             조건 검색 (--compare 를 붙이면 트래커 이력과 비교한 판정도 함께 표시)
                       --to 에 도시명/국가명/쉼표 목록 가능: --to 도쿄 / --to 일본 / --to KIX,FUK
 search_conditions.py  검색 조건(SearchQuery)
 destinations.py       목적지 이름 해석 (data/destinations.json 마스터: 공항/도시/국가/지역)
 web.py                로컬 웹 검색 폼 (python web.py -> http://127.0.0.1:5000). search.py 의 run_search() 를 그대로 사용
 collectors/           수집 계층 (google_flights.py) - 교체 가능
-analyzer/             분석 계층 (combinations, stats, report) - 노선별로 따로 계산
+analyzer/             분석 계층 (combinations, stats, report, history, deals, charts) - 노선별로 따로 계산
+data/diagnostics/     가격 의미 검증 기록 (append-only). 불일치 사실만 남기고 가격은 보정하지 않음
 storage.py            CSV 누적 저장
 data/history/<노선>.csv   노선별 가격 이력 (커밋됨)  예: data/history/ICN-KIX.csv
 data/searches/        일회성 검색 결과 (로컬 전용, 커밋 안 함)

@@ -14,7 +14,8 @@ from datetime import datetime, timedelta, timezone
 
 import config
 from analyzer.report import build_report
-from analyzer import stats
+from analyzer import charts, deals, stats
+from analyzer.history import RouteHistory, thresholds_from_config
 from routes import load_routes
 
 KST = timezone(timedelta(hours=9))
@@ -62,7 +63,43 @@ def trip_row(rank, t):
             f"<td>{t.nights}박</td><td class='price'>{won(t.price)}</td><td>{wk} {tag}</td></tr>")
 
 
-def render(rp, generated_at):
+LABEL_STYLE = {"DEAL": ("deal", "🟢 좋은 가격"), "WATCH": ("watch", "🟡 지켜볼 만함"),
+               "NORMAL": ("normal", "⚪ 보통"), "HOLD": ("hold", "⚫ 판단 보류")}
+
+
+def verdict_block(rp, hist):
+    """최저가 조합 하나에 대한 판정을 설명과 함께 보여줍니다. 가격을 보정하지 않습니다."""
+    if not rp.top:
+        return ""
+    t = rp.top[0]
+    v = deals.judge(t.price, hist, nights=t.nights, dep=t.departure_date,
+                    ret=t.return_date, rules=config.DEAL_RULES)
+    cls, title = LABEL_STYLE.get(v.label, ("normal", v.label))
+    reasons = "".join(f"<li>{esc(r)}</li>" for r in v.reasons)
+    return (f'<div class="verdict {cls}">'
+            f'<div class="vhead">{esc(title)} <span class="muted">'
+            f'{esc(t.period_label)} · {t.nights}박 · {won(t.price)}</span></div>'
+            f'<ul class="vreasons">{reasons}</ul></div>')
+
+
+def history_block(hist, rp):
+    """가격 이력 그래프. 노선 전체 흐름 + 숙박일수별."""
+    route_s = hist.route()
+    main = charts.line_chart(route_s.points, caption="그날 전체 조합 중 최저가")
+    small = ""
+    for n in range(rp.min_nights, rp.max_nights + 1):
+        s = hist.nights(n)
+        if not s.points:
+            continue
+        small += (f'<div class="chart-cell"><div class="chart-title">{n}박</div>'
+                  + charts.line_chart(s.points, width=320, height=120) + "</div>")
+    if small:
+        small = (f'<details><summary>숙박일수별 가격 이력</summary>'
+                 f'<div class="chart-grid">{small}</div></details>')
+    return main + small
+
+
+def render(rp, hist, generated_at):
     change_html = "비교할 이전 수집일 없음 (수집일 2일 이상 필요)"
     if rp.change is not None:
         c = rp.change
@@ -129,6 +166,19 @@ def render(rp, generated_at):
   footer {{ margin-top:32px; font-size:.85rem; color:var(--muted); border-top:1px solid var(--line); padding-top:12px; }}
   footer dl {{ display:grid; grid-template-columns:max-content 1fr; gap:4px 12px; margin:0; }}
   footer dt {{ font-weight:600; }} footer dd {{ margin:0; }}
+  .verdict {{ background:var(--card); border:1px solid var(--line); border-left-width:4px; border-radius:8px; padding:12px 14px; }}
+  .verdict.deal {{ border-left-color:var(--good); }}
+  .verdict.watch {{ border-left-color:#ca8a04; }}
+  .verdict.normal {{ border-left-color:var(--muted); }}
+  .verdict.hold {{ border-left-color:var(--line); }}
+  .vhead {{ font-size:1.05rem; font-weight:700; }}
+  .vreasons {{ margin:8px 0 0; padding-left:18px; font-size:.9rem; }}
+  .vreasons li {{ margin:2px 0; }}
+  .chart {{ display:block; max-width:100%; }}
+  .chart-caption {{ font-size:.8rem; margin-top:2px; }}
+  .chart-grid {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:10px; margin-top:8px; }}
+  .chart-cell {{ background:var(--card); border:1px solid var(--line); border-radius:8px; padding:8px; }}
+  .chart-title {{ font-size:.85rem; font-weight:600; color:var(--muted); }}
 </style>
 </head>
 <body>
@@ -147,6 +197,13 @@ def render(rp, generated_at):
     {window_cards(rp.s90, config.MIN_DAYS_FOR_STATS)}
   </div>
   <p class="muted">가격 변화: {change_html}</p>
+
+  <h2>가격 판정</h2>
+  {verdict_block(rp, hist)}
+  <p class="muted" style="font-size:.8rem">이력이 부족하면 판단을 보류합니다. 수집되지 않은 기간의 가격은 추정하지 않습니다.</p>
+
+  <h2>가격 이력</h2>
+  {history_block(hist, rp)}
 
   <h2>🏆 Top {config.TOP_N}</h2>
   <table><thead><tr><th></th><th>기간</th><th>숙박</th><th>왕복 총액</th><th>구분</th></tr></thead>
@@ -253,7 +310,9 @@ def main():
             print(f"{route.slug}: 데이터 없음 ({route.history_file}) - 상세 페이지 생략")
             continue
         os.makedirs(os.path.dirname(route.page_file), exist_ok=True)
-        page = render(rp, generated_at)
+        hist = RouteHistory.from_file(route.history_file, route.origin, route.destination,
+                                      rp.series[-1].day, thresholds_from_config(config))
+        page = render(rp, hist, generated_at)
         with open(route.page_file, "w", encoding="utf-8") as f:
             f.write(page)
         print(f"{route.slug}: {route.page_file} ({len(page):,} bytes) 현재 최저가 {rp.current_min:,}원 / 조합 {len(rp.trips)}개")

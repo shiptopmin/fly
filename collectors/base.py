@@ -38,6 +38,8 @@ class CollectResult:
     blocked: bool = False                              # CAPTCHA / 차단으로 중단되었는지
     page_loads: int = 0                                # 페이지를 몇 번 열었는지 (부하 확인용)
     grid_steps: int = 0                                # 그리드 스크롤 버튼을 몇 번 눌렀는지
+    # 페이지별 가격 의미 검증 기록 (진단용). 가격을 보정하지 않고 '불일치 사실'만 남깁니다.
+    semantics_checks: list = field(default_factory=list)
 
 
 class BaseCollector(ABC):

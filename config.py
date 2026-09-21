@@ -55,6 +55,8 @@ HISTORY_DIR = "data/history"            # 노선별 가격 이력: data/history/
 LAST_RUN_FILE = "data/last_run.json"    # 가장 최근 실행 요약 (덮어씀)
 DASHBOARD_FILE = "docs/index.html"      # HTML Dashboard (GitHub Pages 가 docs/ 를 서비스)
 SEARCH_DIR = "data/searches"            # 동적 검색(search.py) 결과 저장 폴더. 트래커 CSV 와 분리
+# 가격 의미 검증 기록(진단용, append-only). 가격 보정은 하지 않고 불일치 사실만 누적합니다.
+SEMANTICS_LOG = "data/diagnostics/semantics_checks.csv"
 
 # --- 사이트 부하 최소화 ---
 # 페이지를 연속으로 열 때 사이에 두는 대기 시간(초). 봇 탐지 우회 목적이 아니라
