@@ -48,6 +48,8 @@ PRICE_RE = re.compile(r"^₩\s*([\d,]+)")
 LIST_MIN_RE = re.compile(r"최저가\s*₩\s*([\d,]+)\s*부터")
 
 GRID_BUTTON_NAME = "날짜 표"
+# 선택 셀/목록 최저가가 어긋났을 때, 그리드가 갱신 중일 수 있으므로 이만큼 기다렸다가 1회 재확인합니다.
+SEMANTICS_RECHECK_DELAY_SEC = 2.0
 GRID_HALF_WINDOW = 3   # 그리드가 기준일 ±3일을 보여줌 (7열 x 7행)
 GRID_WINDOW = GRID_HALF_WINDOW * 2 + 1
 
@@ -134,11 +136,12 @@ class GoogleFlightsCollector(BaseCollector):
                     except PlaywrightTimeoutError:
                         result.errors.append(f"Date grid dialog did not open for {anchor_dep}~{anchor_ret}")
                         continue
-                    cells = self._wait_cells_stable(dialog, result)
+                    cells = self._wait_cells_stable(dialog, result, anchor=(anchor_dep, anchor_ret))
                     log.debug("Calendar loaded: %d cells", len(cells))
 
                     # 가격 의미 검증 (선택된 셀 가격 == 결과 목록 최저가 ?)
-                    ok = self._validate_semantics(dialog, list_min_price, result, i == 1)
+                    ok = self._validate_semantics(page, dialog, list_min_price,
+                                                  anchor_dep, anchor_ret, result, i == 1)
                     if ok:
                         verified_loads += 1
 
@@ -265,8 +268,12 @@ class GoogleFlightsCollector(BaseCollector):
             time.sleep(0.5)
         return None
 
-    def _wait_cells_stable(self, dialog, result, timeout_sec=15, interval=0.7):
-        """가격 셀 목록이 두 번 연속 같게 읽힐 때까지 기다린 뒤 그 셀들을 돌려줍니다."""
+    def _wait_cells_stable(self, dialog, result, anchor=None, timeout_sec=15, interval=0.7):
+        """가격 셀 목록이 두 번 연속 같게 읽힐 때까지 기다린 뒤 그 셀들을 돌려줍니다.
+
+        시간 안에 안정되지 않으면 마지막 읽은 값을 쓰되, 그 사실을 로그 경고로만 남기지 않고
+        result.errors 에 남깁니다. (그리드가 흔들리는 상태에서 읽은 값이라는 표시)
+        """
         deadline = time.time() + timeout_sec
         prev = None
         while time.time() < deadline:
@@ -276,7 +283,11 @@ class GoogleFlightsCollector(BaseCollector):
                 return cur
             prev = priced
             time.sleep(interval)
-        log.warning("Grid cells did not stabilize within %ss; using last read", timeout_sec)
+        where = f"anchor={anchor[0]}~{anchor[1]}" if anchor else "anchor=?"
+        msg = (f"Grid cells did not stabilize within {timeout_sec}s ({where}); "
+               f"using last read (가격이 갱신되는 중이었을 수 있음)")
+        log.error(msg)
+        result.errors.append(msg)
         return self._read_cells(dialog, result)
 
     def _read_cells(self, dialog, result):
@@ -326,32 +337,107 @@ class GoogleFlightsCollector(BaseCollector):
                 return None
         return cand
 
-    @staticmethod
-    def _validate_semantics(dialog, list_min_price, result, first_load) -> bool:
-        """그리드의 '선택됨' 셀 가격과 결과 목록 최저가를 비교해 가격 의미를 확인합니다."""
-        selected = None
+    def _read_selected_cells(self, dialog):
+        """그리드에서 '선택됨' 표시가 붙은 셀을 모두 읽습니다.
+
+        [{"price": int, "dep": date, "ret": date, "label": str}, ...]
+        정상이라면 검색 기준일(anchor)과 같은 날짜 구간의 셀 하나만 나와야 합니다.
+        """
         try:
             labels = dialog.locator('div[role="button"][aria-label*="선택됨"]').evaluate_all(
                 "els => els.map(e => e.getAttribute('aria-label'))")
-            if labels:
-                pm = PRICE_RE.match(labels[0])
-                selected = int(pm.group(1).replace(",", "")) if pm else None
         except Exception:
-            pass
+            return []
+        today = datetime.now(KST).date()
+        out = []
+        for label in labels or []:
+            label = label or ""
+            pm = PRICE_RE.match(label)
+            m = DATE_RANGE_RE.search(label)
+            if not pm or not m:
+                continue
+            out.append({"price": int(pm.group(1).replace(",", "")),
+                        "dep": self._to_date(int(m.group(1)), int(m.group(2)), today),
+                        "ret": self._to_date(int(m.group(3)), int(m.group(4)), today),
+                        "label": label})
+        return out
+
+    def _check_semantics(self, dialog, list_min_price, anchor_dep, anchor_ret):
+        """한 번 검사합니다. (통과 여부, 상세 dict)
+
+        문제 종류를 구분해서 기록합니다.
+          no_selected_cell : '선택됨' 셀을 찾지 못함
+          anchor_mismatch  : 선택 셀의 날짜 구간이 검색 기준일과 다름 (= 엉뚱한 셀을 읽음)
+          no_list_min      : 목록 최저가 문구를 읽지 못함
+          price_mismatch   : 기준일 셀은 맞는데 가격이 목록 최저가와 다름 (= 진짜 의미 불일치)
+        """
+        cells = self._read_selected_cells(dialog)
+        match = next((c for c in cells if c["dep"] == anchor_dep and c["ret"] == anchor_ret), None)
+        info = {"cells": cells, "match": match, "list_min": list_min_price, "problem": None}
+        if not cells:
+            info["problem"] = "no_selected_cell"
+        elif match is None:
+            info["problem"] = "anchor_mismatch"
+        elif list_min_price is None:
+            info["problem"] = "no_list_min"
+        elif match["price"] != list_min_price:
+            info["problem"] = "price_mismatch"
+        return info["problem"] is None, info
+
+    @staticmethod
+    def _describe_check(info, anchor_dep, anchor_ret):
+        """검사 결과를 사람이 읽을 수 있는 한 줄로 만듭니다 (원인 추적용)."""
+        cells, match = info.get("cells") or [], info.get("match")
+        if match:
+            sel = f"선택셀 {match['dep']}~{match['ret']} {match['price']:,}원"
+        elif cells:
+            c = cells[0]
+            sel = (f"선택셀이 기준일과 다름: {c['dep']}~{c['ret']} {c['price']:,}원"
+                   + (f" (선택 표시 셀 {len(cells)}개)" if len(cells) > 1 else ""))
+        else:
+            sel = "선택 표시 셀 없음"
+        lm = info.get("list_min")
+        lm_s = "없음" if lm is None else f"{lm:,}원"
+        return f"anchor={anchor_dep}~{anchor_ret}, {sel}, 목록최저={lm_s}, 원인={info.get('problem')}"
+
+    def _validate_semantics(self, page, dialog, list_min_price, anchor_dep, anchor_ret,
+                            result, first_load) -> bool:
+        """'선택됨' 셀 가격과 결과 목록 최저가를 비교해 가격 의미를 확인합니다.
+
+        1) 선택 셀의 날짜 구간이 검색 기준일과 같은지 먼저 확인합니다.
+        2) 어긋나면 그리드가 갱신 중일 수 있으므로 잠시 기다렸다가 1회만 다시 확인합니다.
+        3) 재확인으로 회복된 경우에도 기록을 남겨 이 현상의 빈도를 추적합니다.
+        """
+        ok, info = self._check_semantics(dialog, list_min_price, anchor_dep, anchor_ret)
+        if not ok:
+            first_desc = self._describe_check(info, anchor_dep, anchor_ret)
+            log.warning("Price semantics check failed, rechecking once: %s", first_desc)
+            time.sleep(SEMANTICS_RECHECK_DELAY_SEC)
+            fresh_min = self._read_list_min_price(page, timeout_sec=5)
+            if fresh_min is not None:
+                list_min_price = fresh_min
+            ok, info = self._check_semantics(dialog, list_min_price, anchor_dep, anchor_ret)
+            if ok:
+                msg = f"[NOTE] 선택 셀 재확인 후 일치 (일시적 그리드 불안정): 1차 {first_desc}"
+                log.warning(msg)
+                result.errors.append(msg)
+
         krw_text = ""
         try:
             # 화면에는 보이지 않는(접근성용) 텍스트라 inner_text 대신 text_content 로 읽습니다
             krw_text = (dialog.locator("text=/대한민국 원/").first.text_content(timeout=3_000) or "").strip()
         except Exception:
             pass
-        ok = (selected is not None and list_min_price is not None and selected == list_min_price)
-        log.debug("Price semantics check: selected cell=%s, list min=%s, currency text=%r -> %s",
-                  selected, list_min_price, krw_text, "OK" if ok else "MISMATCH")
+        log.debug("Price semantics check: %s -> %s",
+                  self._describe_check(info, anchor_dep, anchor_ret), "OK" if ok else "MISMATCH")
         if first_load:
             result.price_semantics = (
                 "Google Flights 날짜 표 셀 가격 = 해당 출발일/귀국일 조합의 왕복 총액 "
                 "(성인 1명, 필수 세금·수수료 포함, 검색 결과 중 최저가)"
                 + (f" / 통화 표시: '{krw_text}'" if krw_text else ""))
         if not ok:
-            result.errors.append(f"Semantics cross-check mismatch: selected cell={selected}, list min={list_min_price}")
+            msg = ("Semantics cross-check mismatch (재확인 1회 후에도 불일치): "
+                   + self._describe_check(info, anchor_dep, anchor_ret))
+            log.error(msg)
+            result.errors.append(msg)
         return ok
