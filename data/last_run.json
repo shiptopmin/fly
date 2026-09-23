@@ -1,7 +1,7 @@
 {
   "source": "google_flights",
-  "run_started_at": "2026-09-22T13:50:10+09:00",
-  "run_finished_at": "2026-09-22T13:52:52+09:00",
+  "run_started_at": "2026-09-23T13:41:22+09:00",
+  "run_finished_at": "2026-09-23T13:43:56+09:00",
   "headless": true,
   "routes": [
     {
@@ -13,8 +13,8 @@
         1,
         7
       ],
-      "started_at": "2026-09-22T13:50:10+09:00",
-      "finished_at": "2026-09-22T13:51:33+09:00",
+      "started_at": "2026-09-23T13:41:22+09:00",
+      "finished_at": "2026-09-23T13:42:41+09:00",
       "records_collected": 189,
       "records_added_to_csv": 189,
       "duplicates_skipped": 0,
@@ -28,7 +28,7 @@
       "semantics_mismatches": 0,
       "price_mismatches": 0,
       "history_file": "data/history/ICN-KIX.csv",
-      "total_rows_in_csv": 1890
+      "total_rows_in_csv": 2079
     },
     {
       "route": "ICN-FUK",
@@ -39,8 +39,8 @@
         1,
         7
       ],
-      "started_at": "2026-09-22T13:51:35+09:00",
-      "finished_at": "2026-09-22T13:52:52+09:00",
+      "started_at": "2026-09-23T13:42:43+09:00",
+      "finished_at": "2026-09-23T13:43:56+09:00",
       "records_collected": 189,
       "records_added_to_csv": 189,
       "duplicates_skipped": 0,
@@ -54,7 +54,7 @@
       "semantics_mismatches": 0,
       "price_mismatches": 0,
       "history_file": "data/history/ICN-FUK.csv",
-      "total_rows_in_csv": 1134
+      "total_rows_in_csv": 1323
     }
   ]
 }
