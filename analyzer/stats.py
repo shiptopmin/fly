@@ -84,7 +84,8 @@ def window_stats(series, label, window_days, min_days, today=None):
     """최근 window_days 일 안의 DayPoint 로 평균/최저/최고. window_days=None 이면 전체(수집 이후)."""
     today = today or (series[-1].day if series else date.today())
     if window_days is None:
-        pts = list(series)
+        # 기준일 이후의 점은 넣지 않습니다. (과거 시점으로 되돌려 재판정할 때 미래 데이터가 섞이지 않도록)
+        pts = [p for p in series if p.day <= today]
     else:
         start = today - timedelta(days=window_days - 1)
         pts = [p for p in series if start <= p.day <= today]
@@ -118,13 +119,19 @@ def price_change(series):
     return PriceChange(prev_day=prev.day, prev_price=prev.min_price, today_price=cur.min_price)
 
 
-def price_status(current, since_start: WindowStats, recent30: WindowStats):
-    """단순 비교로만 상태 문장을 만듭니다. 예측/점수 없음."""
+def price_status(current, since_start: WindowStats, recent30: WindowStats, observed_low=None):
+    """단순 비교로만 상태 문장을 만듭니다. 예측/점수 없음.
+
+    observed_low 를 주면 그 값을 '수집 이후 최저'의 기준으로 씁니다. 판정 블록과 같은 출처
+    (Tracker / Probe / 정밀검색) 전체에서 구한 최저가를 넘겨, 이미 더 싼 값을 봤는데도
+    "수집 이후 최저가" 라고 말하지 않도록 합니다.
+    """
     notes = []
-    if since_start.days > 0 and current <= since_start.low:
-        notes.append("🟢 수집 이후 최저가")
+    low = since_start.low if observed_low is None else observed_low
+    if since_start.days > 0 and current <= low:
+        notes.append("🟢 수집 이후 관측 최저가")
     elif since_start.days > 0:
-        notes.append(f"수집 이후 최저가 대비 +{current - since_start.low:,}원")
+        notes.append(f"수집 이후 관측 최저 대비 +{current - low:,}원")
     if recent30.enough:
         if current < recent30.avg:
             notes.append("최근 30일 평균보다 저렴")

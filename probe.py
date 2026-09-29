@@ -42,6 +42,7 @@ from analyzer.combinations import Trip, includes_weekend, load_rows
 from analyzer.history import RouteHistory, thresholds_from_config
 from collectors.google_flights import GoogleFlightsCollector
 from destinations import resolve
+from routes import observation_sources
 from search import make_query, run_search
 from search_conditions import SearchQuery
 
@@ -106,8 +107,16 @@ def records_to_trips(records, origin, airport):
     return trips
 
 
-def history_for(path, origin, code, today):
-    return RouteHistory.from_file(path, origin, code, today, thresholds_from_config(config))
+def history_for(origin, code, today):
+    """판정에 쓸 이력. 이 노선에 대해 '보유한 모든 관측'을 함께 봅니다.
+
+    - probe   : 매일 같은 창을 잰 기록 (비교 가능한 시계열)
+    - confirm : 정밀 검색으로 본 기록 (창 밖 날짜가 많음)
+    - tracker : Deep Tracker 가 있는 노선이면 그 이력까지
+    이렇게 해야 "수집 이후 최저" 같은 주장이 우리가 이미 본 값에 반박당하지 않습니다.
+    """
+    return RouteHistory.from_files(observation_sources(origin, code), origin, code,
+                                   today, thresholds_from_config(config))
 
 
 # ----------------------------------------------------------------------
@@ -220,7 +229,7 @@ def main():
         if best is None:
             pr["verdict"] = None
             continue
-        hist = history_for(probe_file(origin, pr["airport"].code), origin, pr["airport"].code, today)
+        hist = history_for(origin, pr["airport"].code, today)
         v = deals.judge(best.price, hist, nights=best.nights, dep=best.departure_date,
                         ret=best.return_date, rules=config.DEAL_RULES)
         pr["verdict"] = v
@@ -258,7 +267,7 @@ def main():
                 confirmations.append({"airport": a, "verdict": None, "best": None})
                 continue
             cbest = outcome.ranked[0]
-            hist = history_for(probe_file(origin, a.code), origin, a.code, today)
+            hist = history_for(origin, a.code, today)
             v = deals.judge(cbest.price, hist, nights=cbest.nights, dep=cbest.departure_date,
                             ret=cbest.return_date, rules=config.DEAL_RULES)
             print(f"  {a.label:<12} {cbest.price:>9,}원 {cbest.period_label} {cbest.nights}박 "

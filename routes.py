@@ -43,6 +43,20 @@ class Route:
         return os.path.join(os.path.dirname(config.DASHBOARD_FILE), "routes", f"{self.slug}.html")
 
 
+def observation_sources(origin, destination):
+    """이 노선에 대해 우리가 보유한 모든 관측 파일. [(출처이름, 경로), ...]
+
+    판정은 항상 이 목록 전체를 봅니다. 한 곳만 보면 "수집 이후 최저" 같은 주장이
+    우리가 이미 가진 다른 기록에 반박당할 수 있기 때문입니다. 없는 파일은 그냥 비어 있습니다.
+    """
+    slug = f"{origin}-{destination}"
+    return [
+        ("tracker", os.path.join(config.HISTORY_DIR, f"{slug}.csv")),
+        ("probe", os.path.join(config.PROBE_DIR, f"{slug}.csv")),
+        ("confirm", os.path.join(config.PROBE_DIR, "confirm", f"{slug}.csv")),
+    ]
+
+
 def load_routes():
     """config.ROUTES -> [Route, ...]. 같은 노선(출발-도착)이 두 번 적혀 있으면 오류."""
     routes = []

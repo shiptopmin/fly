@@ -248,7 +248,7 @@ class SinceCollectionLowTests(unittest.TestCase):
         rows = [row(d, DEP, RET, p) for d, p in zip(days_back(7), [230000, 228000, 226000, 224000, 222000, 221000, 220000])]
         v = deals.judge(210000, hist(rows), nights=3, dep=DEP, ret=RET, rules=RULES)   # 최저 220,000 보다 4.5% 낮음
         self.assertIn("below_low_all", v.passed)
-        self.assertTrue(any("수집 이후 최저" in r and "낮음" in r for r in v.reasons))
+        self.assertTrue(any("수집 이후 관측 최저" in r and "낮음" in r for r in v.reasons))
         # 0.45% 낮은 219,000 은 잡음 범위 -> 수집 이후 최저로 인정하지 않음
         self.assertNotIn("below_low_all", deals.judge(219000, hist(rows), nights=3, dep=DEP, ret=RET, rules=RULES).passed)
 
@@ -289,6 +289,83 @@ class DropTests(unittest.TestCase):
         v = deals.judge(200000, hist(rows), nights=3, dep=DEP, ret=RET, rules=RULES)
         self.assertEqual(v.metrics["prev_day"], (TODAY - timedelta(days=1)).isoformat())
         self.assertEqual(v.metrics["prev_price"], 250000)
+
+
+class MultiSourceTests(unittest.TestCase):
+    """여러 출처(Probe / 정밀검색 / Tracker)의 관측을 모두 보고 판단하는지.
+
+    2026-09-27 에 실제로 나왔던 잘못된 판정을 막기 위한 테스트입니다.
+    그때는 정밀 검색으로 이미 더 싼 값을 봤는데도 "수집 이후 최저" 라고 말했습니다.
+    """
+
+    def _hist(self, groups):
+        return RouteHistory.from_groups(groups, "ICN", "KIX", TODAY, TH)
+
+    def test_cheaper_observation_in_second_source_blocks_since_low_claim(self):
+        probe = [row(d, DEP, RET, 250000) for d in days_back(7)]
+        # 정밀 검색이 나흘 전에 같은 숙박일수의 다른 날짜에서 훨씬 싼 값을 봤다
+        other = (DEP + timedelta(days=20), RET + timedelta(days=20))
+        confirm = [row(TODAY - timedelta(days=4), *other, 190000)]
+        h = self._hist([("probe", probe), ("confirm", confirm)])
+        v = deals.judge(230000, h, nights=3, dep=other[0], ret=other[1], rules=RULES)
+        self.assertNotIn("below_low_all", v.passed)
+        self.assertNotIn("below_low30", v.passed)
+        self.assertTrue(any("190,000" in r for r in v.reasons),
+                        f"더 싼 관측을 근거에 드러내야 합니다: {v.reasons}")
+
+    def test_same_price_would_be_since_low_without_the_other_source(self):
+        """같은 값이라도 Probe 기록만 보면 '수집 이후 최저'가 되는지 (수정 전 동작 재현)."""
+        probe = [row(d, DEP, RET, 250000) for d in days_back(7)]
+        other = (DEP + timedelta(days=20), RET + timedelta(days=20))
+        h = self._hist([("probe", probe)])
+        v = deals.judge(230000, h, nights=3, dep=other[0], ret=other[1], rules=RULES)
+        self.assertIn("below_low_all", v.passed)
+
+    def test_sources_are_reported_in_reasons(self):
+        h = self._hist([("probe", [row(d, DEP, RET, 250000) for d in days_back(7)]),
+                        ("tracker", [row(d, DEP, RET, 260000) for d in days_back(7)])])
+        v = deals.judge(240000, h, nights=3, dep=DEP, ret=RET, rules=RULES)
+        self.assertTrue(any("probe" in r and "tracker" in r for r in v.reasons),
+                        f"어떤 출처를 근거로 했는지 밝혀야 합니다: {v.reasons}")
+
+    def test_observations_after_today_are_ignored(self):
+        """과거 시점으로 되돌려 재판정할 때 미래 관측이 섞이면 안 됩니다."""
+        rows = [row(d, DEP, RET, 250000) for d in days_back(7)]
+        rows += [row(TODAY + timedelta(days=1), DEP, RET, 100000)]     # 미래 관측
+        h = RouteHistory.from_groups([("probe", rows)], "ICN", "KIX", TODAY, TH)
+        self.assertEqual(h.observed_min(lambda r: True)["price"], 250000)
+        v = deals.judge(230000, h, nights=3, dep=DEP, ret=RET, rules=RULES)
+        self.assertIn("below_low_all", v.passed)
+
+    def test_each_source_keeps_its_own_last_run_of_day(self):
+        """한 출처의 실행 시각이 다른 출처의 같은 날 관측을 밀어내면 안 됩니다."""
+        d = TODAY - timedelta(days=1)
+        tracker = [row(d, DEP, RET, 300000, run="13:49:00")]
+        probe = [row(d, DEP, RET, 280000, run="16:36:00")]
+        h = RouteHistory.from_groups([("tracker", tracker), ("probe", probe)], "ICN", "KIX", TODAY, TH)
+        pts = h.pair(DEP, RET).points
+        self.assertEqual(len(pts), 1)
+        self.assertEqual(pts[0].min_price, 280000)
+        self.assertEqual(pts[0].trips_count, 2, "두 출처의 관측이 모두 세어져야 합니다")
+
+
+class DifferentDatesTests(unittest.TestCase):
+    def test_warns_when_comparing_other_dates(self):
+        rows = [row(d, DEP, RET, 250000) for d in days_back(7)]
+        h = RouteHistory.from_groups([("probe", rows)], "ICN", "KIX", TODAY, TH)
+        other = (DEP + timedelta(days=20), RET + timedelta(days=20))
+        v = deals.judge(200000, h, nights=3, dep=other[0], ret=other[1], rules=RULES)
+        self.assertEqual(v.basis, LEVEL_NIGHTS)
+        self.assertTrue(any("검색한 날짜" in r and "다른 날짜" in r for r in v.reasons),
+                        f"날짜가 다르다는 사실을 밝혀야 합니다: {v.reasons}")
+        self.assertIn("다른 날짜 기준 비교", v.headline)
+
+    def test_no_warning_when_dates_match(self):
+        rows = [row(d, DEP, RET, 250000) for d in days_back(7)]
+        h = RouteHistory.from_groups([("probe", rows)], "ICN", "KIX", TODAY, TH)
+        v = deals.judge(200000, h, nights=3, dep=DEP, ret=RET, rules=RULES)
+        self.assertEqual(v.basis, LEVEL_PAIR)
+        self.assertFalse(any("검색한 날짜" in r for r in v.reasons))
 
 
 class NoScoreTests(unittest.TestCase):

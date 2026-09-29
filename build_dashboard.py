@@ -15,7 +15,6 @@ from datetime import datetime, timedelta, timezone
 import config
 from analyzer.report import build_report
 from analyzer import charts, deals, stats
-from analyzer.history import RouteHistory, thresholds_from_config
 from routes import load_routes
 
 KST = timezone(timedelta(hours=9))
@@ -67,6 +66,14 @@ LABEL_STYLE = {"DEAL": ("deal", "🟢 좋은 가격"), "WATCH": ("watch", "🟡 
                "NORMAL": ("normal", "⚪ 보통"), "HOLD": ("hold", "⚫ 판단 보류")}
 
 
+def low_source_note(rp):
+    """'수집 이후 관측 최저가' 카드 아래에 그 값을 언제, 어느 출처에서 봤는지 적습니다."""
+    o = rp.observed_low_info
+    if not o:
+        return f"{rp.first_day} 부터 {rp.s_all.days}일치"
+    return f"{o['day']} {o['source']} 관측 · {o['dep'][5:]}→{o['ret'][5:]} {o['nights']}박"
+
+
 def verdict_block(rp, hist):
     """최저가 조합 하나에 대한 판정을 설명과 함께 보여줍니다. 가격을 보정하지 않습니다."""
     if not rp.top:
@@ -85,7 +92,8 @@ def verdict_block(rp, hist):
 def history_block(hist, rp):
     """가격 이력 그래프. 노선 전체 흐름 + 숙박일수별."""
     route_s = hist.route()
-    main = charts.line_chart(route_s.points, caption="그날 전체 조합 중 최저가")
+    src = ", ".join(f"{k} {v}건" for k, v in hist.sources.items())
+    main = charts.line_chart(route_s.points, caption=f"그날 관측된 조합 중 최저가 (출처: {src})")
     small = ""
     for n in range(rp.min_nights, rp.max_nights + 1):
         s = hist.nights(n)
@@ -192,7 +200,7 @@ def render(rp, hist, generated_at):
 
   <div class="grid">
     {stat_card("현재 최저가", won(rp.current_min), "최신 수집분 전체 조합 중 최저").replace('class="card"', 'class="card hero"')}
-    {stat_card("수집 이후 최저가", won(rp.s_all.low), f"{rp.first_day} 부터 {rp.s_all.days}일치")}
+    {stat_card("수집 이후 관측 최저가", won(rp.s_all.low), low_source_note(rp))}
     {window_cards(rp.s30, config.MIN_DAYS_FOR_STATS)}
     {window_cards(rp.s90, config.MIN_DAYS_FOR_STATS)}
   </div>
@@ -250,7 +258,7 @@ def route_card(route, rp):
             f'<dt>현재 최저가</dt><dd class="big">{won(rp.current_min)}</dd>'
             f'<dt>최근 30일 최저</dt><dd>{esc(low30)}</dd>'
             f'<dt>최근 30일 평균</dt><dd>{esc(avg30)}</dd>'
-            f'<dt>수집 이후 최저</dt><dd>{won(rp.s_all.low)} <span class="muted">({rp.s_all.days}일치)</span></dd>'
+            f'<dt>수집 이후 관측 최저</dt><dd>{won(rp.s_all.low)} <span class="muted">({esc(low_source_note(rp))})</span></dd>'
             f'</dl><div class="status-line">{esc(rp.status)}</div></a>')
 
 
@@ -310,9 +318,8 @@ def main():
             print(f"{route.slug}: 데이터 없음 ({route.history_file}) - 상세 페이지 생략")
             continue
         os.makedirs(os.path.dirname(route.page_file), exist_ok=True)
-        hist = RouteHistory.from_file(route.history_file, route.origin, route.destination,
-                                      rp.series[-1].day, thresholds_from_config(config))
-        page = render(rp, hist, generated_at)
+        # 판정 블록은 Report 가 상태 문구/최저가 카드에 쓴 것과 '같은 이력 객체'를 씁니다.
+        page = render(rp, rp.hist, generated_at)
         with open(route.page_file, "w", encoding="utf-8") as f:
             f.write(page)
         print(f"{route.slug}: {route.page_file} ({len(page):,} bytes) 현재 최저가 {rp.current_min:,}원 / 조합 {len(rp.trips)}개")

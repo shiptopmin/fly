@@ -76,22 +76,50 @@ def last_run_per_day(rows):
 
 def _daily_points(rows, keep):
     """rows 중 keep(row) 가 True 인 행으로, 날짜별 '마지막 실행'의 최저가 DayPoint 목록을 만듭니다."""
-    last = last_run_per_day(rows)
+    return _daily_points_multi([("history", rows)], keep)
+
+
+def _daily_points_multi(groups, keep):
+    """여러 출처(Tracker / Probe / 정밀검색)의 행을 합쳐 날짜별 대표값을 만듭니다.
+
+    출처마다 '그날 마지막 실행'을 따로 고른 뒤, 같은 날의 출처별 값 중 최저가를 그날 값으로 씁니다.
+    출처를 합칠 때 한 출처의 실행 시각이 다른 출처의 행을 밀어내지 않도록 하기 위한 것입니다.
+    """
     per_day = {}
-    for r in rows:
-        if not keep(r):
-            continue
-        day = date.fromisoformat(r["collected_at"][:10])
-        if r["collected_at"] != last[day]:
-            continue
-        price = int(r["price"])
-        cur = per_day.get(day)
-        if cur is None or price < cur["price"]:
-            per_day[day] = {"price": price, "count": (cur["count"] + 1 if cur else 1)}
-        else:
-            cur["count"] += 1
-    return [stats.DayPoint(day=d, collected_at=last[d], min_price=v["price"], trips_count=v["count"])
+    for _label, rows in groups:
+        last = last_run_per_day(rows)
+        for r in rows:
+            if not keep(r):
+                continue
+            day = date.fromisoformat(r["collected_at"][:10])
+            if r["collected_at"] != last[day]:
+                continue
+            price = int(r["price"])
+            cur = per_day.get(day)
+            if cur is None:
+                per_day[day] = {"price": price, "count": 1, "at": r["collected_at"]}
+            else:
+                cur["count"] += 1
+                if price < cur["price"]:
+                    cur["price"], cur["at"] = price, r["collected_at"]
+    return [stats.DayPoint(day=d, collected_at=v["at"], min_price=v["price"], trips_count=v["count"])
             for d, v in sorted(per_day.items())]
+
+
+# ----------------------------------------------------------------------
+# 층별 필터 (어떤 행을 비교 대상으로 볼지)
+# ----------------------------------------------------------------------
+def keep_route(_r):
+    return True
+
+
+def keep_nights(n):
+    return lambda r: int(r["nights"]) == n
+
+
+def keep_pair(dep: date, ret: date):
+    d, t = dep.isoformat(), ret.isoformat()
+    return lambda r: r["departure_date"] == d and r["return_date"] == t
 
 
 def route_points(rows):
@@ -154,27 +182,78 @@ class RouteHistory:
 
     def __init__(self, rows, origin, destination, today: date, th: Thresholds = Thresholds()):
         self.origin, self.destination = origin, destination
-        self.rows = [r for r in rows if r.get("origin") == origin and r.get("destination") == destination]
         self.today = today
         self.th = th
+        self.groups = [("history", self._only_route(rows))]
+
+    def _only_route(self, rows):
+        return [r for r in rows
+                if r.get("origin") == self.origin and r.get("destination") == self.destination]
 
     @classmethod
     def from_file(cls, path, origin, destination, today: date, th: Thresholds = Thresholds()):
         return cls(load_rows(path), origin, destination, today, th)
 
+    @classmethod
+    def from_groups(cls, groups, origin, destination, today: date, th: Thresholds = Thresholds()):
+        """groups: [(출처이름, 행목록), ...] - 여러 출처의 관측을 함께 봅니다."""
+        obj = cls([], origin, destination, today, th)
+        obj.groups = [(label, obj._only_route(rows)) for label, rows in groups]
+        return obj
+
+    @classmethod
+    def from_files(cls, sources, origin, destination, today: date, th: Thresholds = Thresholds()):
+        """sources: [(출처이름, 파일경로), ...] - 없는 파일은 빈 목록이 됩니다."""
+        return cls.from_groups([(label, load_rows(path)) for label, path in sources],
+                               origin, destination, today, th)
+
+    @property
+    def rows(self):
+        return [r for _, rows in self.groups for r in rows]
+
+    @property
+    def sources(self):
+        """{출처이름: 행 수} - 무엇을 근거로 판단했는지 밝히기 위해 씁니다."""
+        return {label: len(rows) for label, rows in self.groups if rows}
+
     @property
     def days_collected(self) -> int:
-        return len(last_run_per_day(self.rows))
+        return len({d for _, rows in self.groups for d in last_run_per_day(rows)})
+
+    def observed_min(self, keep, since: date = None):
+        """보유한 '모든' 관측 중 최저가. 실행 단위로 걸러내지 않습니다.
+
+        "수집 이후 최저" 같은 주장은 이 값으로 검증합니다. 날짜별 대표값(시계열)은
+        평균과 추세용이라 하루 한 점만 남기지만, 최저가 주장은 우리가 실제로 본 모든
+        관측을 이겨야 하기 때문입니다.
+        """
+        best = None
+        for label, rows in self.groups:
+            for r in rows:
+                if not keep(r):
+                    continue
+                day = date.fromisoformat(r["collected_at"][:10])
+                if day > self.today or (since and day < since):
+                    continue
+                price = int(r["price"])
+                if best is None or price < best["price"]:
+                    best = {"price": price, "day": day, "source": label,
+                            "collected_at": r["collected_at"], "nights": int(r["nights"]),
+                            "dep": r["departure_date"], "ret": r["return_date"]}
+        return best
 
     def route(self) -> SeriesStats:
-        return summarize(LEVEL_ROUTE, "전체", route_points(self.rows), self.today, self.th)
+        return summarize(LEVEL_ROUTE, "전체", _daily_points_multi(self.groups, keep_route),
+                         self.today, self.th)
 
     def nights(self, n: int) -> SeriesStats:
-        return summarize(LEVEL_NIGHTS, f"{n}박", nights_points(self.rows, n), self.today, self.th)
+        return summarize(LEVEL_NIGHTS, f"{n}박", _daily_points_multi(self.groups, keep_nights(n)),
+                         self.today, self.th)
 
     def pair(self, dep: date, ret: date) -> SeriesStats:
         key = f"{dep.month}/{dep.day:02d}→{ret.month}/{ret.day:02d}"
-        return summarize(LEVEL_PAIR, key, pair_points(self.rows, dep, ret), self.today, self.th)
+        return summarize(LEVEL_PAIR, key, _daily_points_multi(self.groups, keep_pair(dep, ret)),
+                         self.today, self.th)
 
 
 def thresholds_from_config(cfg) -> Thresholds:

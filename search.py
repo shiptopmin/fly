@@ -33,6 +33,7 @@ from analyzer.combinations import Trip, includes_weekend
 from analyzer.history import RouteHistory, thresholds_from_config
 from collectors.google_flights import GoogleFlightsCollector
 from destinations import resolve
+from routes import observation_sources
 from search_conditions import SearchQuery
 
 KST = timezone(timedelta(hours=9))
@@ -191,16 +192,16 @@ def save_outcome(outcome: SearchOutcome, to_text, nights_text):
 
 
 def build_histories(origin, airports, today=None):
-    """목적지별 트래커 이력(RouteHistory)을 모읍니다.
+    """목적지별로 '보유한 모든 관측'을 모읍니다 (Tracker / Probe / 정밀검색).
 
-    Tracker 가 쌓은 data/history/<노선>.csv 만 읽습니다. 검색 결과를 이력에 섞지 않습니다.
-    이력 파일이 없는 목적지는 비어 있는 이력이 되어 판정이 HOLD 로 나옵니다.
+    한 출처만 보면 "수집 이후 최저" 같은 주장이 우리가 이미 가진 다른 기록에 반박당합니다.
+    이 검색의 결과 자체는 이력에 섞지 않습니다. 기록이 없는 목적지는 판정이 HOLD 로 나옵니다.
     """
     today = today or datetime.now(KST).date()
     th = thresholds_from_config(config)
-    return {a.code: RouteHistory.from_file(
-        os.path.join(config.HISTORY_DIR, f"{origin}-{a.code}.csv"), origin, a.code, today, th)
-        for a in airports}
+    return {a.code: RouteHistory.from_files(observation_sources(origin, a.code),
+                                            origin, a.code, today, th)
+            for a in airports}
 
 
 def judge_trip(trip, histories):

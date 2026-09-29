@@ -35,7 +35,10 @@ def print_report(rp, show_all=False):
     print(f"마지막 수집: {rp.latest_collected_at}   (분석 조합 {len(rp.trips)}개, 수집일 수 {rp.days_collected}일, 누적 {rp.total_rows}행)")
     print("-" * 60)
     print(f"현재 최저가        {rp.current_min:>12,}원")
-    print(f"수집 이후 최저가   {rp.s_all.low:>12,}원   (첫 수집 {rp.first_day} 부터, {rp.s_all.days}일치)")
+    o = rp.observed_low_info
+    where = (f"{o['day']} {o['source']} 관측, {o['dep'][5:]}→{o['ret'][5:]} {o['nights']}박"
+             if o else f"첫 수집 {rp.first_day} 부터")
+    print(f"수집 이후 관측 최저 {rp.s_all.low:>11,}원   ({where})")
     print(f"상태: {rp.status}")
     print("-" * 60)
     print(fmt_stats(rp.s30))
