@@ -14,6 +14,10 @@ judge() 는 순수 함수입니다: 현재 가격 + 판정 시점 + 노선 이�
   ② 동일 일정 하락: 정확히 같은 일정의 과거 최저보다 noise_pct 이상 낮은가 (이 여행 자신의 변화)
                     같은 일정의 이력이 min_days_pair 일 미만이면 '비교 불가'
   ③ 평소 대비 저가: 같은 숙박일수 모든 일정의 최근 30일 '일별 최저가 평균'보다 below_avg30_pct 이상 낮은가
+
+  [비교 범위: 같은 출발월] ①③ 은 현재 관측과 '출발일이 같은 달'인 관측끼리만 비교합니다. 출발 날짜의 달이 다르면
+  시즌/연휴가 달라 요금 수준이 다르기 때문입니다(Probe 기준일이 10월 창에서 11월 창으로 바뀐 날 중앙값이 평소 변동의
+  5배 움직였음). 같은 출발월 이력이 7일 미만이면 다른 달로 대신하지 않고 HOLD 입니다.
   ①이 성립하면 ②는 논리적으로 따라옵니다(같은 일정은 같은 숙박일수의 일부). 그래서 ①+② 는
   독립된 두 근거로 세지 않고, ① 이 성립하면 ② 는 세부 정보로만 보여줍니다.
 
@@ -123,20 +127,26 @@ def judge(price: int, hist: RouteHistory, as_of: datetime, nights=None, dep: dat
     drop_pct = Fraction(str(rules["drop_1d_pct"]))
 
     past = hist.before(as_of)               # 과거 비교 대상: 판정 시점 이전 관측만
+    ym = (dep.year, dep.month) if dep is not None else None     # 비교 범위: 현재 관측과 같은 출발월
     th = past.th
     today = as_of.date()
     reasons, passed = [], []
     metrics = {"price": price, "as_of": as_of.isoformat(timespec="seconds"),
+               "scope_month": f"{ym[0]:04d}-{ym[1]:02d}" if (dep is not None) else None,
                "past_observations": len(past.rows), "days_collected": past.days_collected,
                "sources": past.sources}
 
-    # ①③ 의 기준 층: 같은 숙박일수(없으면 노선 전체)
+    # ①③ 의 기준 층: 같은 숙박일수(없으면 노선 전체), 그리고 '같은 출발월'.
+    # 출발 날짜의 달이 다른 요금(시즌/연휴가 다름)은 평소와 비교할 수 없으므로 섞지 않습니다.
+    # 같은 출발월 이력이 부족하면 억지로 다른 달과 비교하지 않고 HOLD 로 둡니다.
+    scope = f"{ym[1]}월 출발 " if ym else ""
     if nights is not None:
-        base, keep_base = past.nights(nights), history.keep_nights(nights)
-        base_name = f"{nights}박 모든 일정"
+        base, keep_base = past.nights(nights, ym), history.keep_nights(nights, ym)
+        base_name = f"{scope}{nights}박 모든 일정"
     else:
-        base, keep_base = past.route(), history.keep_route
-        base_name = "노선 전체"
+        base = past.route(ym)
+        keep_base = history.keep_route_month(ym) if ym else history.keep_route
+        base_name = f"{scope}노선 전체" if ym else "노선 전체"
     pair = past.pair(dep, ret) if (dep is not None and ret is not None) else None
 
     reasons.append(f"판정 시점 {as_of:%Y-%m-%d %H:%M}: 이 시각 이전 관측 {len(past.rows):,}건과 비교 "
@@ -144,7 +154,11 @@ def judge(price: int, hist: RouteHistory, as_of: datetime, nights=None, dep: dat
 
     # ---- 이력 부족: 판정 보류 (HOLD 는 이 뜻으로만 씁니다) ----
     if base.grade not in (GRADE_OK, GRADE_RICH):
-        if base.grade == GRADE_NONE:
+        if base.grade == GRADE_NONE and past.rows and ym:
+            # 노선 이력은 있지만 같은 출발월의 관측이 없음: 다른 달과 억지로 비교하지 않고 보류
+            reasons.append(f"{base_name} 이력 없음 (다른 달 출발 관측 {len(past.rows):,}건은 시즌이 달라 비교하지 않음) - 판단 보류")
+            detail = f"판정 보류 ({ym[1]}월 출발 이력 없음)"
+        elif base.grade == GRADE_NONE:
             reasons.append("이력 없음 (이 노선은 아직 수집된 적이 없음) - 판단 보류")
             detail = "판정 보류 (이력 없음)"
         else:

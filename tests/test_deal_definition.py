@@ -219,6 +219,65 @@ class PastDefinitionTests(unittest.TestCase):
         self.assertEqual(len(h.rows), 7)
 
 
+class MonthScopeTests(unittest.TestCase):
+    """①③ 은 현재 관측과 같은 출발월의 관측끼리만 비교한다 (Probe 기준일이 월 경계에서 바뀌는 문제).
+
+    2026-10-01 에 Probe 기준일이 10월 창에서 11월 창으로 넘어가며, 10월 이력과 11월 요금을 섞어 비교했다."""
+
+    OCT = (date(2026, 10, 13), date(2026, 10, 16))                 # 3박, 10월 출발
+    NOV = S                                                         # 3박, 11월 출발 (11/10 -> 11/13)
+
+    def test_other_month_history_is_not_used_hold(self):
+        """10월 이력만 7일 있는데 11월 출발이 훨씬 싸다 -> 비교하지 않고 HOLD (가짜 DEAL 이 되지 않음)."""
+        v = judge_both(150000, rows_for(self.OCT, [250000] * 7), sched=self.NOV)
+        self.assertEqual(v.label, deals.LABEL_HOLD)
+        self.assertEqual(v.passed, [])
+        self.assertEqual(v.detail, "판정 보류 (11월 출발 이력 없음)")
+        self.assertTrue(any("다른 달 출발 관측" in r and "비교하지 않음" in r for r in v.reasons), v.reasons)
+        self.assertEqual(v.metrics["scope_month"], "2026-11")
+
+    def test_only_same_month_enters_the_baseline(self):
+        """10월 250,000원 / 11월 300,000원 이력. 11월 255,000원은 11월 기준으로만 판정 (정확히 15% 낮음 -> DEAL)."""
+        past = rows_for(self.OCT, [250000] * 7) + rows_for(self.NOV, [300000] * 7)
+        v = judge_both(255000, past, sched=self.NOV)
+        self.assertEqual(v.label, deals.LABEL_DEAL, v.summary)
+        self.assertEqual(v.metrics["avg30"], 300000.0)
+        self.assertEqual(v.metrics["low_all"], 300000)
+        self.assertTrue(any("11월 출발 3박 모든 일정" in r for r in v.reasons), v.reasons)
+        self.assertEqual(judge_both(255001, past, sched=self.NOV).label, deals.LABEL_WATCH)   # 14.9997%
+
+    def test_cheaper_other_month_does_not_block_a_real_new_low(self):
+        """10월에 훨씬 싼 요금(100,000원)이 있어도, 11월 안에서의 신저가 판정을 막지 않는다."""
+        past = rows_for(self.OCT, [100000] * 7) + rows_for(self.NOV, [300000] * 7)
+        v = judge_both(280000, past, sched=self.NOV)
+        self.assertIs(v.conditions["new_low"], True)
+        self.assertEqual(v.metrics["low_all"], 300000)
+
+    def test_expensive_other_month_does_not_inflate_the_baseline(self):
+        """10월이 400,000원이어도 11월 평균을 끌어올리지 않는다 (11월 평소 = 300,000원)."""
+        past = rows_for(self.OCT, [400000] * 7) + rows_for(self.NOV, [300000] * 7)
+        v = judge_both(300000, past, sched=self.NOV)
+        self.assertEqual(v.label, deals.LABEL_NORMAL)
+        self.assertEqual(v.metrics["avg30"], 300000.0)
+
+    def test_scope_is_the_departure_month_even_if_return_is_next_month(self):
+        oct_end = (date(2026, 10, 30), date(2026, 11, 2))              # 10월 출발, 귀국은 11월
+        past = rows_for(oct_end, [250000] * 7)
+        v = judge_both(200000, past, sched=oct_end)
+        self.assertEqual(v.metrics["scope_month"], "2026-10")
+        self.assertIs(v.conditions["new_low"], True)
+
+    def test_without_departure_date_there_is_no_month_scope(self):
+        h = RouteHistory.from_groups([("tracker", rows_for(self.OCT, [250000] * 7))], "ICN", "KIX", TODAY, TH)
+        v = deals.judge(200000, h, NOW, nights=3, rules=RULES)
+        self.assertIsNone(v.metrics["scope_month"])
+        self.assertIs(v.conditions["new_low"], True)
+
+    def test_empty_history_message_is_unchanged(self):
+        v = judge_both(200000, [], sched=self.NOV)
+        self.assertEqual(v.detail, "판정 보류 (이력 없음)")
+
+
 class Osaka0928Tests(unittest.TestCase):
     """2026-09-28 실제 오사카 사례 (217,811원, 10/07->10/08, 1박). 고정본: tests/fixtures.
 

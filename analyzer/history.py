@@ -109,12 +109,24 @@ def _daily_points_multi(groups, keep):
 # ----------------------------------------------------------------------
 # 층별 필터 (어떤 행을 비교 대상으로 볼지)
 # ----------------------------------------------------------------------
+def _in_month(r, ym):
+    """관측의 '출발일' 이 ym=(연, 월) 에 속하는가. 달력(출발 날짜)이 다른 요금을 섞어 비교하지 않기 위한 한정입니다."""
+    return r["departure_date"][:7] == f"{ym[0]:04d}-{ym[1]:02d}"
+
+
 def keep_route(_r):
     return True
 
 
-def keep_nights(n):
-    return lambda r: int(r["nights"]) == n
+def keep_route_month(ym):
+    return lambda r: _in_month(r, ym)
+
+
+def keep_nights(n, ym=None):
+    """같은 숙박일수. ym=(연, 월) 을 주면 그 달에 출발하는 관측으로 더 좁힙니다."""
+    if ym is None:
+        return lambda r: int(r["nights"]) == n
+    return lambda r: int(r["nights"]) == n and _in_month(r, ym)
 
 
 def keep_pair(dep: date, ret: date):
@@ -258,12 +270,14 @@ class RouteHistory:
                             "dep": r["departure_date"], "ret": r["return_date"]}
         return best
 
-    def route(self) -> SeriesStats:
-        return summarize(LEVEL_ROUTE, "전체", _daily_points_multi(self.groups, keep_route),
-                         self.today, self.th)
+    def route(self, ym=None) -> SeriesStats:
+        keep = keep_route if ym is None else keep_route_month(ym)
+        key = "전체" if ym is None else f"{ym[1]}월 출발 전체"
+        return summarize(LEVEL_ROUTE, key, _daily_points_multi(self.groups, keep), self.today, self.th)
 
-    def nights(self, n: int) -> SeriesStats:
-        return summarize(LEVEL_NIGHTS, f"{n}박", _daily_points_multi(self.groups, keep_nights(n)),
+    def nights(self, n: int, ym=None) -> SeriesStats:
+        key = f"{n}박" if ym is None else f"{ym[1]}월 출발 {n}박"
+        return summarize(LEVEL_NIGHTS, key, _daily_points_multi(self.groups, keep_nights(n, ym)),
                          self.today, self.th)
 
     def pair(self, dep: date, ret: date) -> SeriesStats:

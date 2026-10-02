@@ -235,9 +235,9 @@ def main():
         v = deals.judge(best.price, hist, pr["as_of"], nights=best.nights, dep=best.departure_date,
                         ret=best.return_date, rules=config.DEAL_RULES)
         pr["verdict"] = v
-        pr["probe_days"] = hist.days_collected
+        pr["probe_days"] = v.metrics.get("base_days", 0)   # 같은 출발월·같은 숙박일수 이력 일수
         print(f"  {pr['airport'].label:<12} {best.price:>9,}원  [{v.label}] {v.headline}"
-              f"  (Probe 이력 {hist.days_collected}일치)")
+              f"  (같은 출발월 이력 {pr['probe_days']}일치)")
 
     candidates = [pr for pr in probes
                   if pr.get("verdict") and pr["verdict"].label in (deals.LABEL_DEAL, deals.LABEL_WATCH)]
