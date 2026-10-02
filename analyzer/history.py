@@ -13,7 +13,7 @@ analyzer/history.py - 노선 이력(data/history/<노선>.csv)에서 비교용 �
 - 창 통계(30/90일, 수집 이후)와 전일 대비 변화는 기존 stats.window_stats / stats.price_change 를 그대로 씁니다.
 """
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime
 
 from . import stats
 from .combinations import load_rows
@@ -206,6 +206,22 @@ class RouteHistory:
         """sources: [(출처이름, 파일경로), ...] - 없는 파일은 빈 목록이 됩니다."""
         return cls.from_groups([(label, load_rows(path)) for label, path in sources],
                                origin, destination, today, th)
+
+    def before(self, as_of: datetime) -> "RouteHistory":
+        """as_of 시각보다 '먼저' 수집된 관측만 담은 읽기 전용 보기를 돌려줍니다.
+
+        - 원본 행은 지우거나 고치지 않습니다. 이 객체를 만들 때만 걸러서 새 객체에 담습니다.
+        - 비교는 엄격한 '<' 입니다. 판정할 관측 자신(같은 시각)과 그 이후 관측은 들어가지 않습니다.
+        - 모든 출처(Tracker / Probe / 정밀검색)에 같은 기준을 적용합니다.
+          그래서 같은 날 먼저 수집된 다른 출처의 관측은 과거로 들어가고, 판정 대상이 이미 저장되어 있어도
+          저장되어 있지 않을 때와 같은 결과가 나옵니다.
+        - 창 통계의 끝점(today)은 as_of 의 날짜로 맞춥니다.
+        """
+        if as_of.tzinfo is None:
+            raise ValueError("as_of 는 시간대가 있는 datetime 이어야 합니다 (수집 시각은 KST +09:00)")
+        kept = [(label, [r for r in rows if datetime.fromisoformat(r["collected_at"]) < as_of])
+                for label, rows in self.groups]
+        return RouteHistory.from_groups(kept, self.origin, self.destination, as_of.date(), self.th)
 
     @property
     def rows(self):

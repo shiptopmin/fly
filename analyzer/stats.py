@@ -117,28 +117,3 @@ def price_change(series):
         return None
     prev, cur = series[-2], series[-1]
     return PriceChange(prev_day=prev.day, prev_price=prev.min_price, today_price=cur.min_price)
-
-
-def price_status(current, since_start: WindowStats, recent30: WindowStats, observed_low=None):
-    """단순 비교로만 상태 문장을 만듭니다. 예측/점수 없음.
-
-    observed_low 를 주면 그 값을 '수집 이후 최저'의 기준으로 씁니다. 판정 블록과 같은 출처
-    (Tracker / Probe / 정밀검색) 전체에서 구한 최저가를 넘겨, 이미 더 싼 값을 봤는데도
-    "수집 이후 최저가" 라고 말하지 않도록 합니다.
-    """
-    notes = []
-    low = since_start.low if observed_low is None else observed_low
-    if since_start.days > 0 and current <= low:
-        notes.append("🟢 수집 이후 관측 최저가")
-    elif since_start.days > 0:
-        notes.append(f"수집 이후 관측 최저 대비 +{current - low:,}원")
-    if recent30.enough:
-        if current < recent30.avg:
-            notes.append("최근 30일 평균보다 저렴")
-        elif current > recent30.avg:
-            notes.append("최근 30일 평균보다 비쌈")
-        else:
-            notes.append("최근 30일 평균과 동일")
-    else:
-        notes.append(f"최근 30일 데이터 부족 ({recent30.days}일치)")
-    return " / ".join(notes)

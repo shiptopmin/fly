@@ -39,14 +39,18 @@ MIN_DAYS_PAIR = 5    # 동일 출발일/귀국일 조합의 이력이 5일 이�
 MIN_DAYS_RICH = 30   # 전체 수집일 30일 이상(+90일 조건)이면 등급 RICH
 
 # 판정 규칙. 값은 절대 기준이 아니라 운영하며 조정하는 설정값입니다.
+#   DEAL = ③ 평소 대비 저가  그리고  (① 신저가  또는  ② 동일 일정 하락)
+#   ① 같은 숙박일수 모든 일정의 과거 최저보다 noise_pct 이상 낮음
+#   ② 정확히 같은 일정의 과거 최저보다 noise_pct 이상 낮음 (같은 일정 이력 MIN_DAYS_PAIR 일 이상일 때만)
+#   ③ 같은 숙박일수 모든 일정의 최근 30일 '일별 최저가 평균'보다 below_avg30_pct 이상 낮음
 DEAL_RULES = {
-    "below_avg30_pct": 15,        # 비교 기준의 30일 평균보다 이 % 이상 낮으면 DEAL
-    "watch_below_avg30_pct": 5,   # 이 % 이상 ~ 위 값 미만 낮으면 WATCH
-    "below_low30": True,          # 30일 최저 이하(동률 포함)이면 DEAL
-    "below_low_all": True,        # 수집 이후 최저 이하이면 DEAL (수집일 MIN_DAYS_30 이상일 때만)
-    "below_pair_low": True,       # 동일 일정의 과거 최저보다 낮으면 DEAL (조합 이력 MIN_DAYS_PAIR 이상일 때만)
-    "drop_1d_pct": 10,            # 직전 수집일 대비 이 % 이상 하락이면 WATCH
-    "noise_pct": 3,               # 이 % 미만의 차이는 '변화 없음(잡음 범위)'으로 취급
+    "below_avg30_pct": 15,         # ③ 기준 (%). 12 와 비교해 볼 수 있도록 설정값으로 둡니다
+    "watch_below_avg30_pct": 5,    # 약한 신호(WATCH): 평균보다 이 % 이상 낮음
+    "below_low_all": True,         # ① 신저가 조건 사용
+    "below_pair_low": True,        # ② 동일 일정 하락 조건 사용
+    "drop_1d_pct": 10,             # 약한 신호(WATCH): 같은 일정이 직전 수집일보다 이 % 이상 하락
+    "noise_pct": 3,                # ①② 에서 이 % 미만의 차이는 '변화 없음(잡음)'
+    "deal_requires_pair_low": False,   # B 정책: DEAL 이려면 ② 도 필요. 기본 꺼짐
 }
 
 # --- Broad Probe (Phase 7-3) ---

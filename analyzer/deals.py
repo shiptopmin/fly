@@ -1,25 +1,34 @@
 """
-analyzer/deals.py - 좋은 가격 판정 엔진 (Phase 7-1)
+analyzer/deals.py - 좋은 가격 판정 엔진
 
-judge() 는 순수 함수입니다: 현재 가격 + 노선 이력(RouteHistory) + 규칙(DEAL_RULES) -> Verdict.
-사이트 접근, 파일 쓰기, 점수 합산을 하지 않습니다. 통과한 규칙의 설명 문장이 그대로 결과입니다.
+judge() 는 순수 함수입니다: 현재 가격 + 판정 시점 + 노선 이력(RouteHistory) + 규칙 -> Verdict.
+사이트 접근, 파일 쓰기, 점수 합산을 하지 않습니다. 통과한 조건의 설명이 그대로 결과입니다.
 
-비교 기준(basis) 우선순위
-    1. pair   동일 노선 + 동일 출발일 + 동일 귀국일 (이력이 MIN_DAYS_PAIR 이상일 때)
-    2. nights 동일 노선 + 동일 숙박일수              (등급 OK 이상일 때)
-    3. route  동일 노선 전체 흐름                    (등급 OK 이상일 때)
-어느 층도 기준이 될 만큼 이력이 없으면 label = HOLD (판단 보류). 이력이 부족한데 DEAL 이 되는 일은 없습니다.
+[현재 관측과 과거 비교 대상의 분리]
+  - price 가 '지금 판정할 현재 관측' 입니다.
+  - 과거 비교 대상은 as_of(판정 시점)보다 먼저 수집된 모든 출처의 관측뿐입니다 (RouteHistory.before).
+  - 현재 관측이 이미 이력에 저장돼 있어도 저장돼 있지 않을 때와 같은 결과가 나옵니다.
 
-라벨
-    DEAL   : 30일 평균 대비 임계값 이상 낮음 / 30일 최저 이하 / 수집 이후 최저 이하 / 동일 일정 과거 최저보다 낮음 중 하나 이상
-    WATCH  : 30일 평균 대비 watch 임계값 이상 낮음(단 DEAL 미만) 또는 직전 수집일 대비 큰 하락
-    NORMAL : 위에 해당 없음
-    HOLD   : 이력 부족으로 판단 보류
+[세 가지 조건 - 서로 다른 질문]
+  ① 신저가       : 같은 숙박일수의 '모든 일정' 과거 최저보다 noise_pct 이상 낮은가 (극단값과 비교)
+  ② 동일 일정 하락: 정확히 같은 일정의 과거 최저보다 noise_pct 이상 낮은가 (이 여행 자신의 변화)
+                    같은 일정의 이력이 min_days_pair 일 미만이면 '비교 불가'
+  ③ 평소 대비 저가: 같은 숙박일수 모든 일정의 최근 30일 '일별 최저가 평균'보다 below_avg30_pct 이상 낮은가
+  ①이 성립하면 ②는 논리적으로 따라옵니다(같은 일정은 같은 숙박일수의 일부). 그래서 ①+② 는
+  독립된 두 근거로 세지 않고, ① 이 성립하면 ② 는 세부 정보로만 보여줍니다.
+
+[라벨]
+  DEAL   : ③ 그리고 (① 또는 ②)       "평소보다 확실히 싸고, 그것이 새로 생긴 사실"
+  WATCH  : 강한 신호 = ①, ②, ③ 중 하나만 성립
+           약한 신호 = 평균보다 watch_below_avg30_pct 이상 낮음 또는 같은 일정이 직전 수집일보다 drop_1d_pct 이상 하락
+  NORMAL : 위에 해당 없음
+  HOLD   : 판정할 이력이 부족함 (같은 숙박일수의 30일 창 수집일 < min_days_30). 그 외의 뜻은 없습니다.
+           HOLD 여도 가격 사실은 그대로 보여주며, 정밀확인 후보 선정과는 별개입니다.
 
 정밀도: 비율 비교는 fractions.Fraction 으로 정확히 계산해 부동소수점 경계 오차를 없앱니다.
 """
 from dataclasses import dataclass, field
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from fractions import Fraction
 
 from . import history
@@ -27,27 +36,31 @@ from .history import (GRADE_NONE, GRADE_OK, GRADE_RICH, GRADE_THIN,
                       LEVEL_NIGHTS, LEVEL_PAIR, LEVEL_ROUTE, RouteHistory, SeriesStats)
 
 LABEL_DEAL, LABEL_WATCH, LABEL_NORMAL, LABEL_HOLD = "DEAL", "WATCH", "NORMAL", "HOLD"
+SIGNAL_STRONG, SIGNAL_WEAK = "strong", "weak"
 
 DEFAULT_RULES = {
-    "below_avg30_pct": 15,
-    "watch_below_avg30_pct": 5,
-    "below_low30": True,
-    "below_low_all": True,
-    "below_pair_low": True,
-    "drop_1d_pct": 10,
-    "noise_pct": 3,
+    "below_avg30_pct": 15,           # ③ 평소 대비 저가 기준 (%)
+    "watch_below_avg30_pct": 5,      # 약한 신호: 평균 대비 이 % 이상 낮음
+    "below_low_all": True,           # ① 신저가 조건 사용
+    "below_pair_low": True,          # ② 동일 일정 하락 조건 사용
+    "drop_1d_pct": 10,               # 약한 신호: 같은 일정이 직전 수집일 대비 이 % 이상 하락
+    "noise_pct": 3,                  # ①② 에서 이 % 미만의 차이는 '변화 없음(잡음)'
+    "deal_requires_pair_low": False, # B 정책: DEAL 이려면 ② 동일 일정 하락도 필요 (기본 꺼짐)
 }
 
 
 @dataclass
 class Verdict:
     label: str                     # DEAL / WATCH / NORMAL / HOLD
-    basis: str                     # 비교에 쓴 층: pair / nights / route / none
-    grade: str                     # 그 층의 이력 등급
+    basis: str                     # 비교에 쓴 가장 세밀한 층: pair / nights / route / none
+    grade: str                     # ①③ 기준 층의 이력 등급
     price: int
     reasons: list = field(default_factory=list)   # 사람이 읽는 근거 문장들
-    metrics: dict = field(default_factory=dict)   # 숫자 근거 (avg30, low30, low_all, pct_vs_avg30 ...)
+    metrics: dict = field(default_factory=dict)   # 숫자 근거
     passed: list = field(default_factory=list)    # 통과한 규칙 이름
+    signal: str = ""               # WATCH 일 때 strong / weak
+    conditions: dict = field(default_factory=dict)  # {"new_low": True/False/None, "pair_improved": ..., "usual_low": ...}
+    detail: str = ""               # 라벨 뒤에 붙는 짧은 근거 (예: "신저가 + 평소 대비 저가")
 
     @property
     def summary(self) -> str:
@@ -55,24 +68,13 @@ class Verdict:
 
     @property
     def headline(self) -> str:
-        """표에 넣을 한 줄 요약. 문장을 다시 파싱하지 않고 metrics/passed 에서 만듭니다."""
-        if self.label == LABEL_HOLD:
-            return self.reasons[0] if self.reasons else "이력 부족으로 판단 보류"
-        bits = []
-        p = self.metrics.get("pct_vs_avg30")
-        if p is not None:
-            bits.append(f"30일 평균보다 {abs(p):.1f}% " + ("낮음" if p > 0 else "높음"))
-        if "below_low_all" in self.passed:
-            bits.append("수집 이후 관측 최저 아래")
-        elif "below_low30" in self.passed:
-            bits.append("30일 관측 최저 아래")
-        if self.basis != LEVEL_PAIR and self.metrics.get("compared_other_dates"):
-            bits.append("다른 날짜 기준 비교")
-        if "below_pair_low" in self.passed:
-            bits.append("동일 일정 과거 최저 아래")
-        if "drop_1d_pct" in self.passed:
-            bits.append("전일 대비 하락")
-        return " / ".join(bits) if bits else "평소 수준"
+        """표에 넣을 한 줄 요약(라벨 제외). 사실과 근거를 문장에서 다시 파싱하지 않고 만들어 둔 값을 씁니다."""
+        return self.detail
+
+    @property
+    def title(self) -> str:
+        """대시보드와 피드가 같이 쓰는 한 줄. 예: 'DEAL · 신저가 + 평소 대비 저가 (...)'"""
+        return f"{self.label} · {self.detail}" if self.detail else self.label
 
 
 # ----------------------------------------------------------------------
@@ -97,31 +99,21 @@ def _fmt_pct(x: Fraction) -> str:
     return f"{float(x):.1f}%"
 
 
+def _md(iso_date: str) -> str:
+    return f"{int(iso_date[5:7])}/{iso_date[8:10]}"
+
+
 # ----------------------------------------------------------------------
 # 판정
 # ----------------------------------------------------------------------
-def choose_basis(hist: RouteHistory, nights, dep, ret):
-    """우선순위대로 비교 기준 층을 고릅니다. (SeriesStats, 후보들의 dict) 를 돌려줍니다."""
-    cands = {}
-    if dep is not None and ret is not None:
-        cands[LEVEL_PAIR] = hist.pair(dep, ret)
-    if nights is not None:
-        cands[LEVEL_NIGHTS] = hist.nights(nights)
-    cands[LEVEL_ROUTE] = hist.route()
-    for level in (LEVEL_PAIR, LEVEL_NIGHTS, LEVEL_ROUTE):
-        s = cands.get(level)
-        if s is not None and s.grade in (GRADE_OK, GRADE_RICH):
-            return s, cands
-    return None, cands
-
-
-def judge(price: int, hist: RouteHistory, nights=None, dep: date = None, ret: date = None,
+def judge(price: int, hist: RouteHistory, as_of: datetime, nights=None, dep: date = None, ret: date = None,
           rules: dict = None) -> Verdict:
-    """현재 가격을 노선 이력과 비교해 Verdict 를 돌려줍니다.
+    """현재 가격을 판정 시점 이전의 모든 관측과 비교해 Verdict 를 돌려줍니다.
 
-    price : 지금 관측한 왕복 총액 (원)
-    hist  : 같은 노선의 RouteHistory (today 가 기준일)
-    nights, dep, ret : 관측한 조합. dep/ret 가 있으면 pair 층부터 시도
+    price : 지금 판정할 현재 관측의 왕복 총액 (원)
+    hist  : 같은 노선의 RouteHistory (모든 출처). 현재 관측이 들어 있어도 됩니다.
+    as_of : 판정 시점 (시간대 있는 datetime). 이 시각보다 먼저 수집된 관측만 과거로 봅니다. 필수입니다.
+    nights, dep, ret : 현재 관측의 조합. nights 가 없으면 노선 전체를 '평소'로 봅니다.
     rules : DEAL_RULES (없으면 DEFAULT_RULES)
     """
     rules = {**DEFAULT_RULES, **(rules or {})}
@@ -129,161 +121,197 @@ def judge(price: int, hist: RouteHistory, nights=None, dep: date = None, ret: da
     deal_pct = Fraction(str(rules["below_avg30_pct"]))
     watch_pct = Fraction(str(rules["watch_below_avg30_pct"]))
     drop_pct = Fraction(str(rules["drop_1d_pct"]))
-    th = hist.th
 
-    basis, cands = choose_basis(hist, nights, dep, ret)
-    reasons, passed, metrics = [], [], {"price": price, "days_collected": hist.days_collected}
+    past = hist.before(as_of)               # 과거 비교 대상: 판정 시점 이전 관측만
+    th = past.th
+    today = as_of.date()
+    reasons, passed = [], []
+    metrics = {"price": price, "as_of": as_of.isoformat(timespec="seconds"),
+               "past_observations": len(past.rows), "days_collected": past.days_collected,
+               "sources": past.sources}
 
-    # ---- 이력 부족: 판단 보류 (어떤 층도 OK 가 아님) ----
-    if basis is None:
-        best = max(cands.values(), key=lambda s: s.days)
-        need = th.min_days_pair if best.level == LEVEL_PAIR else th.min_days_30
-        if best.grade == GRADE_NONE:
+    # ①③ 의 기준 층: 같은 숙박일수(없으면 노선 전체)
+    if nights is not None:
+        base, keep_base = past.nights(nights), history.keep_nights(nights)
+        base_name = f"{nights}박 모든 일정"
+    else:
+        base, keep_base = past.route(), history.keep_route
+        base_name = "노선 전체"
+    pair = past.pair(dep, ret) if (dep is not None and ret is not None) else None
+
+    reasons.append(f"판정 시점 {as_of:%Y-%m-%d %H:%M}: 이 시각 이전 관측 {len(past.rows):,}건과 비교 "
+                   f"(현재 관측은 비교 대상에서 제외)")
+
+    # ---- 이력 부족: 판정 보류 (HOLD 는 이 뜻으로만 씁니다) ----
+    if base.grade not in (GRADE_OK, GRADE_RICH):
+        if base.grade == GRADE_NONE:
             reasons.append("이력 없음 (이 노선은 아직 수집된 적이 없음) - 판단 보류")
+            detail = "판정 보류 (이력 없음)"
         else:
-            reasons.append(f"이력 부족 ({best.key} 기준 수집 {best.days}일치, 최소 {need}일 필요) - 판단 보류")
-            if best.w_all and best.w_all.days:
-                metrics["low_all_ref"] = best.w_all.low
-                reasons.append(f"참고: 수집 이후 최저 {best.w_all.low:,}원 대비 "
-                               f"{'+' if price > best.w_all.low else ''}{price - best.w_all.low:,}원 (판단에 쓰지 않음)")
-        return Verdict(label=LABEL_HOLD, basis="none", grade=best.grade, price=price,
-                       reasons=reasons, metrics=metrics)
+            reasons.append(f"이력 부족 ({base_name} 기준 수집 {base.days}일치, 최소 {th.min_days_30}일 필요) - 판단 보류")
+            detail = f"판정 보류 (이력 {base.days}일)"
+            if base.w_all and base.w_all.days:
+                metrics["low_all_ref"] = base.w_all.low
+                reasons.append(f"참고: 수집 이후 최저 {base.w_all.low:,}원 대비 "
+                               f"{'+' if price > base.w_all.low else ''}{price - base.w_all.low:,}원 (판단에 쓰지 않음)")
+        metrics["base_days"] = base.days
+        return Verdict(label=LABEL_HOLD, basis="none", grade=base.grade, price=price,
+                       reasons=reasons, metrics=metrics, detail=detail)
 
     # ---- 기준 층의 지표 ----
-    lvl_name = {LEVEL_PAIR: f"동일 일정 {basis.key}", LEVEL_NIGHTS: f"{basis.key} 조합", LEVEL_ROUTE: "노선 전체"}[basis.level]
-    w30, w90, w_all = basis.w30, basis.w90, basis.w_all
-    pts30 = [p for p in basis.points if (hist.today - p.day).days <= 29 and p.day <= hist.today]
+    pts30 = [p for p in base.points if (today - p.day).days <= 29 and p.day <= today]
     avg30 = exact_avg(pts30)
-    metrics.update({"basis": basis.level, "basis_key": basis.key, "basis_days": basis.days,
-                    "avg30": float(avg30), "low30": w30.low, "high30": w30.high,
-                    "low_all": w_all.low, "days30": w30.days, "days90": w90.days, "days_all": w_all.days})
-    src = hist.sources
-    metrics["sources"] = src
-    reasons.append(f"비교 기준: {lvl_name} (이력 {basis.days}일치, 등급 {basis.grade}, "
+    src = past.sources
+    reasons.append(f"비교 기준: {base_name} (이력 {base.days}일치, 등급 {base.grade}, "
                    f"관측 출처 {', '.join(f'{k} {v}건' for k, v in src.items()) if src else '없음'})")
-    # 비교 대상이 '검색한 그 날짜'가 아니면 반드시 밝힙니다.
-    if basis.level != LEVEL_PAIR and dep is not None and ret is not None:
+    metrics.update({"base": base.level, "base_key": base.key, "base_days": base.days, "avg30": float(avg30),
+                    "days30": len(pts30)})
+
+    pair_usable = pair is not None and pair.days >= th.min_days_pair
+    basis_level = LEVEL_PAIR if pair_usable else base.level
+    metrics["basis"] = basis_level
+    if pair is not None and not pair_usable:
         metrics["compared_other_dates"] = True
-        same = "같은 숙박일수의 다른 날짜" if basis.level == LEVEL_NIGHTS else "이 노선의 다른 날짜"
         reasons.append(f"⚠ 비교 대상은 검색한 날짜({dep.month}/{dep.day:02d}→{ret.month}/{ret.day:02d})가 아니라 "
-                       f"{same} 기록입니다. 여행 날짜가 다르므로 참고치로 보세요")
-
-    is_deal = is_watch = False
-
-    # 규칙 1) 30일 평균 대비
-    p_avg = pct_below(price, avg30)
-    metrics["pct_vs_avg30"] = float(p_avg)
-    if abs(p_avg) < noise:
-        reasons.append(f"최근 30일 평균 {float(avg30):,.0f}원과 {_fmt_pct(abs(p_avg))} 차이: 잡음 범위(±{float(noise):g}%), 변화로 보지 않음")
-    elif p_avg >= deal_pct:
-        is_deal = True
-        passed.append("below_avg30_pct")
-        reasons.append(f"최근 30일 평균 {float(avg30):,.0f}원보다 {_fmt_pct(p_avg)} 낮음 (기준 {float(deal_pct):g}%)")
-    elif p_avg >= watch_pct:
-        is_watch = True
-        passed.append("watch_below_avg30_pct")
-        reasons.append(f"최근 30일 평균 {float(avg30):,.0f}원보다 {_fmt_pct(p_avg)} 낮음 (DEAL 기준 {float(deal_pct):g}% 미만)")
-    elif p_avg > 0:
-        reasons.append(f"최근 30일 평균 {float(avg30):,.0f}원보다 {_fmt_pct(p_avg)} 낮음 (WATCH 기준 {float(watch_pct):g}% 미만)")
-    else:
-        reasons.append(f"최근 30일 평균 {float(avg30):,.0f}원보다 {_fmt_pct(-p_avg)} 높음")
-
-    # "최저보다 낮다" 는 판단도 잡음 기준을 넘어야 인정합니다. (동률이나 1~2% 차이는 변화로 보지 않음)
-    def below_low(low):
-        """(잡음 이상으로 낮음?, 낮은 비율)"""
-        p = pct_below(price, low)
-        return p >= noise, p
-
-    # 최저가 주장은 '보유한 모든 관측'을 이겨야 합니다.
-    # 시계열(하루 한 점)이 아니라 원본 관측 전체에서 최저가를 찾아 비교합니다.
-    # 이렇게 하지 않으면 정밀 검색으로 이미 더 싼 값을 봤는데도 "수집 이후 최저"라고 말하게 됩니다.
-    basis_keep = {LEVEL_PAIR: history.keep_pair(dep, ret) if dep and ret else history.keep_route,
-                  LEVEL_NIGHTS: history.keep_nights(nights) if nights is not None else history.keep_route,
-                  LEVEL_ROUTE: history.keep_route}[basis.level]
-    low_all = hist.observed_min(basis_keep)
-    low_30 = hist.observed_min(basis_keep, since=hist.today - timedelta(days=29))
+                       f"같은 숙박일수의 다른 날짜 기록입니다. 여행 날짜가 다르므로 참고치로 보세요")
 
     def _where(obs):
-        """그 최저가를 언제 어디서 봤는지 (주장의 출처를 밝히기 위해)."""
+        """그 값을 언제 어디서 봤는지 (주장의 출처를 밝히기 위해)."""
         return (f"{obs['day']} {obs['source']} 기준"
-                + (f", {obs['dep'][5:]}→{obs['ret'][5:]}" if obs["dep"] != (dep.isoformat() if dep else None) else ""))
+                + (f", {_md(obs['dep'])}→{_md(obs['ret'])}" if obs["dep"] != (dep.isoformat() if dep else None) else ""))
 
-    # 규칙 2) 최근 30일 최저 대비
-    if rules["below_low30"] and low_30:
-        ok, p = below_low(low_30["price"])
-        metrics["low30"] = low_30["price"]
-        metrics["pct_vs_low30"] = float(p)
-        if ok:
-            is_deal = True
-            passed.append("below_low30")
-            reasons.append(f"최근 30일 관측 최저 {low_30['price']:,}원보다 {_fmt_pct(p)} 낮음 ({_where(low_30)})")
-        elif p >= 0:
-            reasons.append(f"최근 30일 관측 최저 {low_30['price']:,}원과 "
-                           f"{'동률' if p == 0 else _fmt_pct(p) + ' 차이'}: 잡음 범위")
-        else:
-            reasons.append(f"최근 30일 관측 최저 {low_30['price']:,}원 대비 +{price - low_30['price']:,}원 ({_where(low_30)})")
+    # ---- ③ 평소 대비 저가 ----
+    p3 = pct_below(price, avg30)
+    metrics["pct_vs_avg30"] = float(p3)
+    c3 = p3 >= deal_pct
+    if abs(p3) < noise:
+        reasons.append(f"③ 최근 30일 일별 최저 평균 {float(avg30):,.0f}원({base_name})과 {_fmt_pct(abs(p3))} 차이: "
+                       f"잡음 범위(±{float(noise):g}%), 변화로 보지 않음")
+    elif c3:
+        passed.append("below_avg30_pct")
+        reasons.append(f"③ 최근 30일 일별 최저 평균 {float(avg30):,.0f}원({base_name})보다 {_fmt_pct(p3)} 낮음 "
+                       f"(기준 {float(deal_pct):g}%)")
+    elif p3 >= watch_pct:
+        passed.append("watch_below_avg30_pct")
+        reasons.append(f"③ 최근 30일 일별 최저 평균 {float(avg30):,.0f}원({base_name})보다 {_fmt_pct(p3)} 낮음 "
+                       f"(DEAL 기준 {float(deal_pct):g}% 미만)")
+    elif p3 > 0:
+        reasons.append(f"③ 최근 30일 일별 최저 평균 {float(avg30):,.0f}원({base_name})보다 {_fmt_pct(p3)} 낮음 "
+                       f"(WATCH 기준 {float(watch_pct):g}% 미만)")
+    else:
+        reasons.append(f"③ 최근 30일 일별 최저 평균 {float(avg30):,.0f}원({base_name})보다 {_fmt_pct(-p3)} 높음")
 
-    # 규칙 3) 수집 이후 최저 대비 (수집일이 충분할 때만)
-    if rules["below_low_all"] and w_all.days >= th.min_days_30 and low_all:
-        ok, p = below_low(low_all["price"])
-        metrics["low_all"] = low_all["price"]
-        metrics["pct_vs_low_all"] = float(p)
-        if ok:
-            is_deal = True
+    # ---- ① 신저가: 같은 숙박일수 모든 일정의 과거 최저 (원본 관측 전체에서 찾음) ----
+    low_all = past.observed_min(keep_base)
+    c1 = None
+    if rules["below_low_all"] and low_all:
+        p1 = pct_below(price, low_all["price"])
+        metrics.update({"low_all": low_all["price"], "pct_vs_low_all": float(p1)})
+        c1 = p1 >= noise
+        if c1:
             passed.append("below_low_all")
-            reasons.append(f"수집 이후 관측 최저 {low_all['price']:,}원보다 {_fmt_pct(p)} 낮음 ({_where(low_all)})")
-        elif p >= 0:
-            reasons.append(f"수집 이후 관측 최저 {low_all['price']:,}원과 "
-                           f"{'동률' if p == 0 else _fmt_pct(p) + ' 차이'}: 잡음 범위 ({_where(low_all)})")
+            reasons.append(f"① 수집 이후 관측 최저 {low_all['price']:,}원보다 {_fmt_pct(p1)} 낮음 ({_where(low_all)})")
+        elif p1 >= 0:
+            reasons.append(f"① 수집 이후 관측 최저 {low_all['price']:,}원과 "
+                           f"{'동률' if p1 == 0 else _fmt_pct(p1) + ' 차이'}: 잡음 범위 ({_where(low_all)})")
         else:
-            reasons.append(f"수집 이후 관측 최저 {low_all['price']:,}원 대비 "
+            reasons.append(f"① 수집 이후 관측 최저 {low_all['price']:,}원 대비 "
                            f"+{price - low_all['price']:,}원 ({_where(low_all)})")
-    elif rules["below_low_all"]:
-        reasons.append(f"수집 이후 최저 비교는 보류 (수집 {w_all.days}일치, 최소 {th.min_days_30}일 필요)")
 
-    # 규칙 4) 동일 일정 과거 최저 (기준 층이 pair 가 아니어도, pair 이력이 충분하면 추가로 본다)
-    pair = cands.get(LEVEL_PAIR)
-    if rules["below_pair_low"] and pair is not None and dep and ret:
-        pair_low = hist.observed_min(history.keep_pair(dep, ret))
-        if pair.days >= th.min_days_pair and pair_low:
-            metrics["pair_low"] = pair_low["price"]
-            metrics["pair_days"] = pair.days
-            ok, p = below_low(pair_low["price"])
-            metrics["pct_vs_pair_low"] = float(p)
-            if ok:
-                is_deal = True
+    # ---- ② 동일 일정 하락: 정확히 같은 일정의 과거 최저 ----
+    c2 = None
+    pair_low = past.observed_min(history.keep_pair(dep, ret)) if (dep is not None and ret is not None) else None
+    if rules["below_pair_low"] and pair is not None:
+        if pair_usable and pair_low:
+            p2 = pct_below(price, pair_low["price"])
+            metrics.update({"pair_low": pair_low["price"], "pair_days": pair.days, "pct_vs_pair_low": float(p2)})
+            c2 = p2 >= noise
+            if c2:
                 passed.append("below_pair_low")
-                reasons.append(f"동일 일정({pair.key})의 관측 최저 {pair_low['price']:,}원보다 "
-                               f"{_fmt_pct(p)} 낮음 ({pair.days}일치)")
-            elif p >= 0:
-                reasons.append(f"동일 일정({pair.key}) 관측 최저 {pair_low['price']:,}원과 "
-                               f"{'동률' if p == 0 else _fmt_pct(p) + ' 차이'}: 잡음 범위")
-            elif basis.level != LEVEL_PAIR:
-                reasons.append(f"동일 일정({pair.key}) 관측 최저 {pair_low['price']:,}원 대비 "
+                note = " (① 신저가에 포함되는 사실이라 따로 세지 않음)" if c1 else ""
+                reasons.append(f"② 동일 일정({pair.key})의 관측 최저 {pair_low['price']:,}원보다 "
+                               f"{_fmt_pct(p2)} 낮음 ({pair.days}일치){note}")
+            elif p2 >= 0:
+                reasons.append(f"② 동일 일정({pair.key}) 관측 최저 {pair_low['price']:,}원과 "
+                               f"{'동률' if p2 == 0 else _fmt_pct(p2) + ' 차이'}: 잡음 범위")
+            else:
+                reasons.append(f"② 동일 일정({pair.key}) 관측 최저 {pair_low['price']:,}원 대비 "
                                f"+{price - pair_low['price']:,}원")
         elif pair.days:
-            reasons.append(f"동일 일정({pair.key}) 이력 {pair.days}일치 (최소 {th.min_days_pair}일) - 동일 일정 비교 보류")
+            reasons.append(f"② 동일 일정({pair.key}) 이력 {pair.days}일치 (최소 {th.min_days_pair}일) - 동일 일정 비교 보류")
 
-    # 규칙 5) 직전 수집일 대비 하락
-    # "직전" = 기준일(today)보다 앞선 마지막 수집일. 오늘 수집분이 이력에 이미 있어도(트래커) 없어도(검색) 같게 동작.
-    prev_pts = [p for p in basis.points if p.day < hist.today]
-    if prev_pts:
-        prev = prev_pts[-1]
-        p_drop = pct_below(price, prev.min_price)
-        metrics["prev_day"] = prev.day.isoformat()
-        metrics["prev_price"] = prev.min_price
-        metrics["pct_vs_prev"] = float(p_drop)
-        if abs(p_drop) < noise:
-            reasons.append(f"직전 수집일({prev.day}) {prev.min_price:,}원과 {_fmt_pct(abs(p_drop))} 차이: 잡음 범위")
-        elif p_drop >= drop_pct:
-            is_watch = True
-            passed.append("drop_1d_pct")
-            reasons.append(f"직전 수집일({prev.day}) {prev.min_price:,}원 대비 {price - prev.min_price:,}원 ({_fmt_pct(p_drop)} 하락)")
-        elif p_drop > 0:
-            reasons.append(f"직전 수집일({prev.day}) 대비 {price - prev.min_price:,}원 ({_fmt_pct(p_drop)} 하락, 기준 {float(drop_pct):g}% 미만)")
+    # 같은 일정을 최근에 더 싸게 본 적이 있는지 (평소 대비 저가만 성립할 때 반드시 경고하기 위한 사실)
+    cheaper = None
+    if pair_low and (Fraction(price) - pair_low["price"]) * 100 >= Fraction(pair_low["price"]) * noise:
+        cheaper = pair_low
+        metrics["pair_cheaper_before"] = {"price": pair_low["price"], "day": pair_low["day"].isoformat(),
+                                          "source": pair_low["source"]}
+
+    # ---- 약한 신호: 같은 일정이 직전 수집일 대비 크게 하락 ----
+    drop_hit = False
+    if pair is not None:
+        prev_pts = [p for p in pair.points if p.day < today]
+        if prev_pts:
+            prev = prev_pts[-1]
+            p_drop = pct_below(price, prev.min_price)
+            metrics.update({"prev_day": prev.day.isoformat(), "prev_price": prev.min_price,
+                            "pct_vs_prev": float(p_drop)})
+            if abs(p_drop) < noise:
+                reasons.append(f"직전 수집일({prev.day}) {prev.min_price:,}원과 {_fmt_pct(abs(p_drop))} 차이: 잡음 범위")
+            elif p_drop >= drop_pct:
+                drop_hit = True
+                passed.append("drop_1d_pct")
+                reasons.append(f"직전 수집일({prev.day}) {prev.min_price:,}원 대비 "
+                               f"{price - prev.min_price:,}원 ({_fmt_pct(p_drop)} 하락)")
+            elif p_drop > 0:
+                reasons.append(f"직전 수집일({prev.day}) 대비 {price - prev.min_price:,}원 "
+                               f"({_fmt_pct(p_drop)} 하락, 기준 {float(drop_pct):g}% 미만)")
+            else:
+                reasons.append(f"직전 수집일({prev.day}) 대비 +{price - prev.min_price:,}원 ({_fmt_pct(-p_drop)} 상승)")
+
+    # ---- 라벨 결정: DEAL = ③ 그리고 (① 또는 ②) ----
+    new_low, pair_down = bool(c1), bool(c2)
+    new_fact = new_low or pair_down                       # ①이 성립하면 ②는 별도 근거로 세지 않음
+    deal = c3 and (pair_down if rules["deal_requires_pair_low"] else new_fact)
+    strong = new_low or pair_down or c3
+    weak = ("watch_below_avg30_pct" in passed) or drop_hit
+    conditions = {"new_low": c1, "pair_improved": c2, "usual_low": c3}
+
+    def pct_txt(key):
+        v = metrics.get(key)
+        return f"{v:.1f}%" if v is not None else ""
+
+    if deal:
+        label, signal = LABEL_DEAL, ""
+        first = "신저가" if new_low else "동일 일정 하락"
+        detail = (f"{first} + 평소 대비 저가 (평소보다 {pct_txt('pct_vs_avg30')}, "
+                  + (f"이전 최저보다 {pct_txt('pct_vs_low_all')}" if new_low
+                     else f"이 일정 과거 최저보다 {pct_txt('pct_vs_pair_low')}") + ")")
+    elif strong:
+        label, signal = LABEL_WATCH, SIGNAL_STRONG
+        if new_low:
+            detail = f"신저가 (이전 최저보다 {pct_txt('pct_vs_low_all')}, 평소 대비 {pct_txt('pct_vs_avg30')})"
+        elif pair_down:
+            detail = f"동일 일정 하락 (이 일정 과거 최저보다 {pct_txt('pct_vs_pair_low')}, 신저가 아님, 평소 대비 {pct_txt('pct_vs_avg30')})"
         else:
-            reasons.append(f"직전 수집일({prev.day}) 대비 +{price - prev.min_price:,}원 ({_fmt_pct(-p_drop)} 상승)")
+            detail = f"평소 대비 저가 (평소보다 {pct_txt('pct_vs_avg30')})"
+            if cheaper:
+                detail += f" ⚠ 이 일정은 {_md(cheaper['day'].isoformat())} {cheaper['price']:,}원이었음"
+        if c3 and new_fact and not deal and rules["deal_requires_pair_low"]:
+            detail += " (정책: DEAL 은 ② 동일 일정 하락이 필요해 보류)"
+    elif weak:
+        label, signal = LABEL_WATCH, SIGNAL_WEAK
+        bits = []
+        if "watch_below_avg30_pct" in passed:
+            bits.append(f"평소보다 {pct_txt('pct_vs_avg30')} 낮음")
+        if drop_hit:
+            bits.append(f"같은 일정 전일 대비 {pct_txt('pct_vs_prev')} 하락")
+        detail = "약한 신호 (" + ", ".join(bits) + ")"
+    else:
+        label, signal, detail = LABEL_NORMAL, "", "평소 수준"
+    if metrics.get("compared_other_dates"):
+        detail += " · 다른 날짜 기준 비교"
 
-    label = LABEL_DEAL if is_deal else (LABEL_WATCH if is_watch else LABEL_NORMAL)
-    return Verdict(label=label, basis=basis.level, grade=basis.grade, price=price,
-                   reasons=reasons, metrics=metrics, passed=passed)
+    metrics["signal"] = signal
+    return Verdict(label=label, basis=basis_level, grade=base.grade, price=price, reasons=reasons,
+                   metrics=metrics, passed=passed, signal=signal, conditions=conditions, detail=detail)

@@ -204,12 +204,15 @@ def build_histories(origin, airports, today=None):
             for a in airports}
 
 
-def judge_trip(trip, histories):
-    """조합 하나를 과거 가격과 비교해 판정합니다. 이력이 없으면 HOLD 입니다."""
+def judge_trip(trip, histories, as_of):
+    """조합 하나를 판정 시점(as_of) 이전의 관측과 비교해 판정합니다. 이력이 없으면 HOLD 입니다.
+
+    검색 결과는 이력에 저장되지 않으므로 as_of 는 검색을 시작한 시각입니다.
+    """
     h = histories.get(trip.destination)
     if h is None:
         return None
-    return deals.judge(trip.price, h, nights=trip.nights, dep=trip.departure_date,
+    return deals.judge(trip.price, h, as_of, nights=trip.nights, dep=trip.departure_date,
                        ret=trip.return_date, rules=config.DEAL_RULES)
 
 
@@ -296,7 +299,7 @@ def main():
     def verdict_line(t, indent=" " * 6):
         if not args.compare:
             return None
-        v = judge_trip(t, histories)
+        v = judge_trip(t, histories, outcome.started_at)
         return None if v is None else f"{indent}{v.label}: {v.headline}"
 
     print("=" * 60)

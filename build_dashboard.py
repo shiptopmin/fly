@@ -71,21 +71,20 @@ def low_source_note(rp):
     o = rp.observed_low_info
     if not o:
         return f"{rp.first_day} 부터 {rp.s_all.days}일치"
-    return f"{o['day']} {o['source']} 관측 · {o['dep'][5:]}→{o['ret'][5:]} {o['nights']}박"
+    now = " · 이번 수집" if rp.observed_low_is_current else ""
+    return f"{o['day']} {o['source']} 관측 · {o['dep'][5:]}→{o['ret'][5:]} {o['nights']}박{now}"
 
 
-def verdict_block(rp, hist):
-    """최저가 조합 하나에 대한 판정을 설명과 함께 보여줍니다. 가격을 보정하지 않습니다."""
-    if not rp.top:
+def verdict_block(rp):
+    """판정 결과(rp.verdict)를 근거와 함께 보여줍니다. 상단 상태 문구와 같은 결과 하나를 씁니다."""
+    v, t = rp.verdict, rp.verdict_trip
+    if v is None or t is None:
         return ""
-    t = rp.top[0]
-    v = deals.judge(t.price, hist, nights=t.nights, dep=t.departure_date,
-                    ret=t.return_date, rules=config.DEAL_RULES)
     cls, title = LABEL_STYLE.get(v.label, ("normal", v.label))
     reasons = "".join(f"<li>{esc(r)}</li>" for r in v.reasons)
     return (f'<div class="verdict {cls}">'
             f'<div class="vhead">{esc(title)} <span class="muted">'
-            f'{esc(t.period_label)} · {t.nights}박 · {won(t.price)}</span></div>'
+            f'{esc(t.period_label)} · {t.nights}박 · {won(t.price)} · {esc(v.detail)}</span></div>'
             f'<ul class="vreasons">{reasons}</ul></div>')
 
 
@@ -207,7 +206,7 @@ def render(rp, hist, generated_at):
   <p class="muted">가격 변화: {change_html}</p>
 
   <h2>가격 판정</h2>
-  {verdict_block(rp, hist)}
+  {verdict_block(rp)}
   <p class="muted" style="font-size:.8rem">이력이 부족하면 판단을 보류합니다. 수집되지 않은 기간의 가격은 추정하지 않습니다.</p>
 
   <h2>가격 이력</h2>

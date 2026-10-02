@@ -37,6 +37,7 @@ def print_report(rp, show_all=False):
     print(f"현재 최저가        {rp.current_min:>12,}원")
     o = rp.observed_low_info
     where = (f"{o['day']} {o['source']} 관측, {o['dep'][5:]}→{o['ret'][5:]} {o['nights']}박"
+             + (" · 이번 수집" if rp.observed_low_is_current else "")
              if o else f"첫 수집 {rp.first_day} 부터")
     print(f"수집 이후 관측 최저 {rp.s_all.low:>11,}원   ({where})")
     print(f"상태: {rp.status}")

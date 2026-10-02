@@ -230,7 +230,9 @@ def main():
             pr["verdict"] = None
             continue
         hist = history_for(origin, pr["airport"].code, today)
-        v = deals.judge(best.price, hist, nights=best.nights, dep=best.departure_date,
+        # 현재 관측 = 이번 Probe 의 최저 조합, 판정 시점 = 이 목적지 Probe 의 수집 시각
+        pr["as_of"] = datetime.fromisoformat(pr["result"].records[0].collected_at)
+        v = deals.judge(best.price, hist, pr["as_of"], nights=best.nights, dep=best.departure_date,
                         ret=best.return_date, rules=config.DEAL_RULES)
         pr["verdict"] = v
         pr["probe_days"] = hist.days_collected
@@ -268,7 +270,9 @@ def main():
                 continue
             cbest = outcome.ranked[0]
             hist = history_for(origin, a.code, today)
-            v = deals.judge(cbest.price, hist, nights=cbest.nights, dep=cbest.departure_date,
+            # 정밀 확인은 Probe 가 연 하나의 발견 사건이므로, 판정 시점은 그 목적지 Probe 의 수집 시각입니다.
+            # (같은 사건의 Probe 기록이 '과거'로 들어가 자기 발견과 비교되는 것을 막습니다)
+            v = deals.judge(cbest.price, hist, c["as_of"], nights=cbest.nights, dep=cbest.departure_date,
                             ret=cbest.return_date, rules=config.DEAL_RULES)
             print(f"  {a.label:<12} {cbest.price:>9,}원 {cbest.period_label} {cbest.nights}박 "
                   f"→ 최종 [{v.label}] {v.headline}  ({outcome.page_loads}회 로드, {time.time() - t0:.0f}초)")

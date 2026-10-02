@@ -8,20 +8,27 @@ tests/test_deals.py - 판정 엔진(analyzer/history.py, analyzer/deals.py) 합�
 실제 항공권 가격과 무관합니다.
 """
 import unittest
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from fractions import Fraction
 
 from analyzer import deals
 from analyzer.history import (GRADE_NONE, GRADE_OK, GRADE_RICH, GRADE_THIN,
                               LEVEL_NIGHTS, LEVEL_PAIR, LEVEL_ROUTE, RouteHistory, Thresholds)
 
+KST = timezone(timedelta(hours=9))
 TODAY = date(2026, 10, 1)
+AS_OF = datetime(2026, 10, 1, 0, 0, tzinfo=KST)       # 기존 테스트의 판정 시점: 기준일 0시 (이력은 모두 그 이전)
 TH = Thresholds(min_days_30=7, min_days_90=14, min_days_pair=5, min_days_rich=30)
 RULES = {"below_avg30_pct": 15, "watch_below_avg30_pct": 5, "below_low30": True,
          "below_low_all": True, "below_pair_low": True, "drop_1d_pct": 10, "noise_pct": 3}
 
 DEP = date(2026, 11, 10)
 RET = date(2026, 11, 13)          # 3박
+
+
+def J(price, h, as_of=None, **kw):
+    """deals.judge 에 판정 시점을 붙여 부르는 도우미. 시점을 주지 않으면 기준일 0시."""
+    return deals.judge(price, h, as_of or AS_OF, **kw)
 
 
 def row(day, dep, ret, price, run="09:10:00", origin="ICN", destination="KIX"):
@@ -80,29 +87,34 @@ class GradeTests(unittest.TestCase):
 
 class HoldTests(unittest.TestCase):
     def test_hold_when_no_history(self):
-        v = deals.judge(150000, hist([]), nights=3, dep=DEP, ret=RET, rules=RULES)
+        v = J(150000, hist([]), nights=3, dep=DEP, ret=RET, rules=RULES)
         self.assertEqual(v.label, deals.LABEL_HOLD)
         self.assertEqual(v.basis, "none")
-        self.assertIn("이력 없음", v.reasons[0])
+        self.assertTrue(any("이력 없음" in r for r in v.reasons))
+        self.assertEqual(v.detail, "판정 보류 (이력 없음)")
 
     def test_hold_when_thin_even_if_price_is_tiny(self):
         # 다른 일정 6일치(route/nights 는 7일 필요), 같은 일정 4일치(pair 는 5일 필요) -> 어느 층도 OK 아님 -> HOLD
         other = (DEP + timedelta(days=3), RET + timedelta(days=3))
         rows = [row(d, *other, 300000) for d in days_back(6)] + [row(d, DEP, RET, 300000) for d in days_back(4)]
-        v = deals.judge(1000, hist(rows), nights=3, dep=DEP, ret=RET, rules=RULES)
+        v = J(1000, hist(rows), nights=3, dep=DEP, ret=RET, rules=RULES)
         self.assertEqual(v.label, deals.LABEL_HOLD)
         self.assertEqual(v.passed, [])
         self.assertTrue(any("판단 보류" in r for r in v.reasons))
 
-    def test_pair_with_min_days_is_judged_even_if_route_is_thin(self):
-        rows = [row(d, DEP, RET, 300000) for d in days_back(5)]   # pair 5일 = MIN_DAYS_PAIR
-        v = deals.judge(200000, hist(rows), nights=3, dep=DEP, ret=RET, rules=RULES)
-        self.assertNotEqual(v.label, deals.LABEL_HOLD)
-        self.assertEqual(v.basis, LEVEL_PAIR)
+    def test_pair_history_alone_is_not_enough_to_judge(self):
+        """같은 일정 이력이 5일 있어도, 같은 숙박일수 이력이 7일 미만이면 ③ 평소 대비를 계산할 수 없다 -> HOLD.
+
+        (HOLD 는 '판정할 이력이 부족하다' 는 뜻으로만 씁니다.)"""
+        rows = [row(d, DEP, RET, 300000) for d in days_back(5)]   # pair 5일 = MIN_DAYS_PAIR, nights 5일 < 7일
+        v = J(200000, hist(rows), nights=3, dep=DEP, ret=RET, rules=RULES)
+        self.assertEqual(v.label, deals.LABEL_HOLD)
+        self.assertEqual(v.passed, [])
+        self.assertIn("이력 5일", v.detail)
 
     def test_one_day_history_is_hold(self):
         rows = [row(TODAY, DEP, RET, 220000)]
-        v = deals.judge(220000, hist(rows), nights=3, dep=DEP, ret=RET, rules=RULES)
+        v = J(220000, hist(rows), nights=3, dep=DEP, ret=RET, rules=RULES)
         self.assertEqual(v.label, deals.LABEL_HOLD)
 
 
@@ -113,27 +125,27 @@ class Avg30ThresholdTests(unittest.TestCase):
         self.h = hist(self.rows)
 
     def test_exactly_15pct_is_deal(self):
-        v = deals.judge(170000, self.h, nights=3, dep=DEP, ret=RET, rules=RULES)
+        v = J(170000, self.h, nights=3, dep=DEP, ret=RET, rules=RULES)
         self.assertEqual(v.label, deals.LABEL_DEAL)
         self.assertIn("below_avg30_pct", v.passed)
 
     def test_one_won_above_boundary_is_not_avg_deal(self):
-        v = deals.judge(170001, self.h, nights=3, dep=DEP, ret=RET, rules=RULES)
+        v = J(170001, self.h, nights=3, dep=DEP, ret=RET, rules=RULES)
         self.assertNotIn("below_avg30_pct", v.passed)
         self.assertIn("watch_below_avg30_pct", v.passed)     # 14.9995% -> WATCH 구간
 
     def test_watch_boundary_5pct(self):
         self.assertIn("watch_below_avg30_pct",
-                      deals.judge(190000, self.h, nights=3, dep=DEP, ret=RET, rules=RULES).passed)
-        v = deals.judge(190001, self.h, nights=3, dep=DEP, ret=RET, rules=RULES)
+                      J(190000, self.h, nights=3, dep=DEP, ret=RET, rules=RULES).passed)
+        v = J(190001, self.h, nights=3, dep=DEP, ret=RET, rules=RULES)
         self.assertNotIn("watch_below_avg30_pct", v.passed)
 
     def test_threshold_is_configurable(self):
         rules = dict(RULES, below_avg30_pct=20)
-        v = deals.judge(170000, self.h, nights=3, dep=DEP, ret=RET, rules=rules)
+        v = J(170000, self.h, nights=3, dep=DEP, ret=RET, rules=rules)
         self.assertNotIn("below_avg30_pct", v.passed)      # 15% 는 20% 기준에 못 미침
         self.assertIn("below_avg30_pct",
-                      deals.judge(160000, self.h, nights=3, dep=DEP, ret=RET, rules=rules).passed)
+                      J(160000, self.h, nights=3, dep=DEP, ret=RET, rules=rules).passed)
 
     def test_exact_fraction_boundary_with_awkward_average(self):
         # 평균이 딱 떨어지지 않는 경우: 7일 가격 합 = 1,400,003 -> avg = 200000.428...
@@ -145,8 +157,8 @@ class Avg30ThresholdTests(unittest.TestCase):
         p_max = int((Fraction(total) * (100 - 15) / 100) / n)
         while (Fraction(total) - p_max * n) / Fraction(total) * 100 < 15:
             p_max -= 1
-        self.assertIn("below_avg30_pct", deals.judge(p_max, h, nights=3, dep=DEP, ret=RET, rules=RULES).passed)
-        self.assertNotIn("below_avg30_pct", deals.judge(p_max + 1, h, nights=3, dep=DEP, ret=RET, rules=RULES).passed)
+        self.assertIn("below_avg30_pct", J(p_max, h, nights=3, dep=DEP, ret=RET, rules=RULES).passed)
+        self.assertNotIn("below_avg30_pct", J(p_max + 1, h, nights=3, dep=DEP, ret=RET, rules=RULES).passed)
 
 
 class NoiseTests(unittest.TestCase):
@@ -156,53 +168,55 @@ class NoiseTests(unittest.TestCase):
 
     def test_inside_noise_is_reported_as_no_change(self):
         # 이력이 모두 200,000 이므로 평균=최저. 2.5% 낮은 값은 평균/최저 어느 규칙에도 걸리면 안 됨
-        v = deals.judge(195000, self.h, nights=3, dep=DEP, ret=RET, rules=RULES)   # 2.5% 낮음
+        v = J(195000, self.h, nights=3, dep=DEP, ret=RET, rules=RULES)   # 2.5% 낮음
         self.assertTrue(any("잡음 범위" in r for r in v.reasons))
         self.assertEqual(v.passed, [])
         self.assertEqual(v.label, deals.LABEL_NORMAL)
 
     def test_exactly_noise_pct_is_a_real_change(self):
-        v = deals.judge(194000, self.h, nights=3, dep=DEP, ret=RET, rules=RULES)   # 정확히 3.0%
+        v = J(194000, self.h, nights=3, dep=DEP, ret=RET, rules=RULES)   # 정확히 3.0%
         self.assertFalse(any("잡음 범위" in r and "평균" in r for r in v.reasons))
         self.assertTrue(any("3.0% 낮음" in r for r in v.reasons))
-        # 최저(200,000)보다 정확히 3.0% 낮으므로 최저 규칙은 통과 -> DEAL
-        self.assertIn("below_low30", v.passed)
+        # 최저(200,000)보다 정확히 3.0% 낮으므로 ① 신저가 조건은 통과
+        self.assertIn("below_low_all", v.passed)
 
     def test_tie_with_low_is_noise_not_deal(self):
-        v = deals.judge(200000, self.h, nights=3, dep=DEP, ret=RET, rules=RULES)
+        v = J(200000, self.h, nights=3, dep=DEP, ret=RET, rules=RULES)
         self.assertEqual(v.passed, [])
         self.assertTrue(any("동률" in r for r in v.reasons))
 
     def test_noise_is_configurable(self):
         rules = dict(RULES, noise_pct=0)
-        v = deals.judge(199999, self.h, nights=3, dep=DEP, ret=RET, rules=rules)
+        v = J(199999, self.h, nights=3, dep=DEP, ret=RET, rules=rules)
         self.assertFalse(any("잡음 범위" in r and "평균" in r for r in v.reasons))
 
 
 class PairComparisonTests(unittest.TestCase):
     def test_pair_low_rule_with_enough_pair_days(self):
         rows = [row(d, DEP, RET, p) for d, p in zip(days_back(7), [240000, 235000, 230000, 225000, 232000, 238000, 236000])]
-        v = deals.judge(215000, hist(rows), nights=3, dep=DEP, ret=RET, rules=RULES)   # 최저 225,000 보다 4.4% 낮음
+        v = J(215000, hist(rows), nights=3, dep=DEP, ret=RET, rules=RULES)   # 최저 225,000 보다 4.4% 낮음
         self.assertEqual(v.basis, LEVEL_PAIR)
         self.assertIn("below_pair_low", v.passed)
-        self.assertEqual(v.label, deals.LABEL_DEAL)
+        # 평소(평균 233,714원)보다는 8.0% 낮을 뿐이라 ③ 15% 에 못 미친다 -> DEAL 이 아니라 WATCH
+        self.assertEqual(v.label, deals.LABEL_WATCH)
+        self.assertEqual(v.signal, deals.SIGNAL_STRONG)
         self.assertTrue(any("동일 일정" in r and "225,000원보다" in r for r in v.reasons))
 
     def test_slightly_below_pair_low_is_noise(self):
         rows = [row(d, DEP, RET, p) for d, p in zip(days_back(7), [240000, 235000, 230000, 225000, 232000, 238000, 236000])]
-        v = deals.judge(220000, hist(rows), nights=3, dep=DEP, ret=RET, rules=RULES)   # 2.2% 낮음 -> 잡음
+        v = J(220000, hist(rows), nights=3, dep=DEP, ret=RET, rules=RULES)   # 2.2% 낮음 -> 잡음
         self.assertNotIn("below_pair_low", v.passed)
         self.assertTrue(any("동일 일정" in r and "잡음 범위" in r for r in v.reasons))
 
     def test_equal_to_pair_low_is_not_below(self):
         rows = [row(d, DEP, RET, 225000) for d in days_back(7)]
-        v = deals.judge(225000, hist(rows), nights=3, dep=DEP, ret=RET, rules=RULES)
+        v = J(225000, hist(rows), nights=3, dep=DEP, ret=RET, rules=RULES)
         self.assertNotIn("below_pair_low", v.passed)
 
     def test_different_dates_are_not_the_same_schedule(self):
         # 이력은 11/10->11/13 만 있음. 11/11->11/14 를 물으면 pair 층은 비어야 하고 nights 층으로 비교
         rows = [row(d, DEP, RET, 200000) for d in days_back(7)]
-        v = deals.judge(150000, hist(rows), nights=3, dep=DEP + timedelta(days=1), ret=RET + timedelta(days=1), rules=RULES)
+        v = J(150000, hist(rows), nights=3, dep=DEP + timedelta(days=1), ret=RET + timedelta(days=1), rules=RULES)
         self.assertEqual(v.basis, LEVEL_NIGHTS)
         self.assertNotIn("below_pair_low", v.passed)
         self.assertNotIn("pair_low", v.metrics)
@@ -212,7 +226,7 @@ class PairComparisonTests(unittest.TestCase):
         rows = [row(d, DEP, RET, 200000) for d in days_back(4)]
         other = (DEP + timedelta(days=5), RET + timedelta(days=5))
         rows += [row(d, *other, 210000) for d in days_back(7)]
-        v = deals.judge(150000, hist(rows), nights=3, dep=DEP, ret=RET, rules=RULES)
+        v = J(150000, hist(rows), nights=3, dep=DEP, ret=RET, rules=RULES)
         self.assertEqual(v.basis, LEVEL_NIGHTS)
         self.assertTrue(any("동일 일정 비교 보류" in r for r in v.reasons))
 
@@ -227,45 +241,46 @@ class NightsComparisonTests(unittest.TestCase):
             rows.append(row(d, *one, 100000))
             rows.append(row(d, *three, 300000))
         # 3박 250,000원을 다른 날짜(11/25->11/28)로 물음 -> pair 없음 -> nights(3박) 기준 avg 300,000 -> 16.7% 낮음 -> DEAL
-        v = deals.judge(250000, hist(rows), nights=3, dep=date(2026, 11, 25), ret=date(2026, 11, 28), rules=RULES)
+        v = J(250000, hist(rows), nights=3, dep=date(2026, 11, 25), ret=date(2026, 11, 28), rules=RULES)
         self.assertEqual(v.basis, LEVEL_NIGHTS)
         self.assertEqual(v.metrics["avg30"], 300000.0)
         self.assertIn("below_avg30_pct", v.passed)
         # 같은 가격을 노선 전체(최저 100,000) 기준으로 봤다면 '높음' 이었을 것 -> nights 층이 우선임을 확인
-        v_route = deals.judge(250000, hist(rows), nights=None, rules=RULES)
+        v_route = J(250000, hist(rows), nights=None, rules=RULES)
         self.assertEqual(v_route.basis, LEVEL_ROUTE)
         self.assertEqual(v_route.metrics["avg30"], 100000.0)
         self.assertEqual(v_route.label, deals.LABEL_NORMAL)
 
     def test_nights_without_history_falls_back_to_route(self):
         rows = [row(d, DEP, RET, 200000) for d in days_back(7)]      # 3박만 있음
-        v = deals.judge(150000, hist(rows), nights=5, rules=RULES)  # 5박 이력 없음 -> route 기준
-        self.assertEqual(v.basis, LEVEL_ROUTE)
+        v = J(150000, hist(rows), nights=5, rules=RULES)  # 5박 이력 없음
+        # 노선 전체는 숙박일수가 섞여 있어 '같은 숙박일수의 평소'를 대신할 수 없다 -> 판정 보류
+        self.assertEqual(v.label, deals.LABEL_HOLD)
+        self.assertEqual(v.basis, "none")
 
 
 class SinceCollectionLowTests(unittest.TestCase):
     def test_since_low_with_enough_days(self):
         rows = [row(d, DEP, RET, p) for d, p in zip(days_back(7), [230000, 228000, 226000, 224000, 222000, 221000, 220000])]
-        v = deals.judge(210000, hist(rows), nights=3, dep=DEP, ret=RET, rules=RULES)   # 최저 220,000 보다 4.5% 낮음
+        v = J(210000, hist(rows), nights=3, dep=DEP, ret=RET, rules=RULES)   # 최저 220,000 보다 4.5% 낮음
         self.assertIn("below_low_all", v.passed)
         self.assertTrue(any("수집 이후 관측 최저" in r and "낮음" in r for r in v.reasons))
         # 0.45% 낮은 219,000 은 잡음 범위 -> 수집 이후 최저로 인정하지 않음
-        self.assertNotIn("below_low_all", deals.judge(219000, hist(rows), nights=3, dep=DEP, ret=RET, rules=RULES).passed)
+        self.assertNotIn("below_low_all", J(219000, hist(rows), nights=3, dep=DEP, ret=RET, rules=RULES).passed)
 
     def test_since_low_tie_is_noise_unless_noise_is_zero(self):
         rows = [row(d, DEP, RET, 220000) for d in days_back(7)]
-        v = deals.judge(220000, hist(rows), nights=3, dep=DEP, ret=RET, rules=RULES)
+        v = J(220000, hist(rows), nights=3, dep=DEP, ret=RET, rules=RULES)
         self.assertNotIn("below_low_all", v.passed)          # 동률은 잡음 범위
-        v0 = deals.judge(219999, hist(rows), nights=3, dep=DEP, ret=RET, rules=dict(RULES, noise_pct=0))
+        v0 = J(219999, hist(rows), nights=3, dep=DEP, ret=RET, rules=dict(RULES, noise_pct=0))
         self.assertIn("below_low_all", v0.passed)            # noise 0 이면 1원 차이도 인정
-        self.assertIn("below_low30", v0.passed)
 
     def test_since_low_not_claimed_with_few_days(self):
         # pair 5일치(OK) 이지만 수집일 5 < MIN_DAYS_30(7) -> 수집 이후 최저 비교는 보류
         rows = [row(d, DEP, RET, 220000) for d in days_back(5)]
-        v = deals.judge(100000, hist(rows), nights=3, dep=DEP, ret=RET, rules=RULES)
+        v = J(100000, hist(rows), nights=3, dep=DEP, ret=RET, rules=RULES)
         self.assertNotIn("below_low_all", v.passed)
-        self.assertTrue(any("수집 이후 최저 비교는 보류" in r for r in v.reasons))
+        self.assertEqual(v.label, deals.LABEL_HOLD)           # 수집 5일 < 7일: 신저가라고 말하지 않고 보류
 
 
 class DropTests(unittest.TestCase):
@@ -275,18 +290,18 @@ class DropTests(unittest.TestCase):
         return [row(d, DEP, RET, p) for d, p in zip(days_back(7), prices)]
 
     def test_drop_10pct_is_watch(self):
-        v = deals.judge(225000, hist(self._rows()), nights=3, dep=DEP, ret=RET, rules=RULES)  # 직전 대비 정확히 10% 하락
+        v = J(225000, hist(self._rows()), nights=3, dep=DEP, ret=RET, rules=RULES)  # 직전 대비 정확히 10% 하락
         self.assertIn("drop_1d_pct", v.passed)
         self.assertNotIn("below_low30", v.passed)            # 최저 200,000 보다는 높음
         self.assertEqual(v.label, deals.LABEL_WATCH)
 
     def test_drop_just_under_threshold_is_not_watch(self):
-        v = deals.judge(225001, hist(self._rows()), nights=3, dep=DEP, ret=RET, rules=RULES)
+        v = J(225001, hist(self._rows()), nights=3, dep=DEP, ret=RET, rules=RULES)
         self.assertNotIn("drop_1d_pct", v.passed)
 
     def test_prev_day_is_last_day_before_today_even_if_today_in_history(self):
         rows = [row(d, DEP, RET, 250000) for d in days_back(7)] + [row(TODAY, DEP, RET, 200000)]
-        v = deals.judge(200000, hist(rows), nights=3, dep=DEP, ret=RET, rules=RULES)
+        v = J(200000, hist(rows), nights=3, dep=DEP, ret=RET, rules=RULES)
         self.assertEqual(v.metrics["prev_day"], (TODAY - timedelta(days=1)).isoformat())
         self.assertEqual(v.metrics["prev_price"], 250000)
 
@@ -307,7 +322,7 @@ class MultiSourceTests(unittest.TestCase):
         other = (DEP + timedelta(days=20), RET + timedelta(days=20))
         confirm = [row(TODAY - timedelta(days=4), *other, 190000)]
         h = self._hist([("probe", probe), ("confirm", confirm)])
-        v = deals.judge(230000, h, nights=3, dep=other[0], ret=other[1], rules=RULES)
+        v = J(230000, h, nights=3, dep=other[0], ret=other[1], rules=RULES)
         self.assertNotIn("below_low_all", v.passed)
         self.assertNotIn("below_low30", v.passed)
         self.assertTrue(any("190,000" in r for r in v.reasons),
@@ -318,13 +333,13 @@ class MultiSourceTests(unittest.TestCase):
         probe = [row(d, DEP, RET, 250000) for d in days_back(7)]
         other = (DEP + timedelta(days=20), RET + timedelta(days=20))
         h = self._hist([("probe", probe)])
-        v = deals.judge(230000, h, nights=3, dep=other[0], ret=other[1], rules=RULES)
+        v = J(230000, h, nights=3, dep=other[0], ret=other[1], rules=RULES)
         self.assertIn("below_low_all", v.passed)
 
     def test_sources_are_reported_in_reasons(self):
         h = self._hist([("probe", [row(d, DEP, RET, 250000) for d in days_back(7)]),
                         ("tracker", [row(d, DEP, RET, 260000) for d in days_back(7)])])
-        v = deals.judge(240000, h, nights=3, dep=DEP, ret=RET, rules=RULES)
+        v = J(240000, h, nights=3, dep=DEP, ret=RET, rules=RULES)
         self.assertTrue(any("probe" in r and "tracker" in r for r in v.reasons),
                         f"어떤 출처를 근거로 했는지 밝혀야 합니다: {v.reasons}")
 
@@ -334,7 +349,7 @@ class MultiSourceTests(unittest.TestCase):
         rows += [row(TODAY + timedelta(days=1), DEP, RET, 100000)]     # 미래 관측
         h = RouteHistory.from_groups([("probe", rows)], "ICN", "KIX", TODAY, TH)
         self.assertEqual(h.observed_min(lambda r: True)["price"], 250000)
-        v = deals.judge(230000, h, nights=3, dep=DEP, ret=RET, rules=RULES)
+        v = J(230000, h, nights=3, dep=DEP, ret=RET, rules=RULES)
         self.assertIn("below_low_all", v.passed)
 
     def test_each_source_keeps_its_own_last_run_of_day(self):
@@ -354,7 +369,7 @@ class DifferentDatesTests(unittest.TestCase):
         rows = [row(d, DEP, RET, 250000) for d in days_back(7)]
         h = RouteHistory.from_groups([("probe", rows)], "ICN", "KIX", TODAY, TH)
         other = (DEP + timedelta(days=20), RET + timedelta(days=20))
-        v = deals.judge(200000, h, nights=3, dep=other[0], ret=other[1], rules=RULES)
+        v = J(200000, h, nights=3, dep=other[0], ret=other[1], rules=RULES)
         self.assertEqual(v.basis, LEVEL_NIGHTS)
         self.assertTrue(any("검색한 날짜" in r and "다른 날짜" in r for r in v.reasons),
                         f"날짜가 다르다는 사실을 밝혀야 합니다: {v.reasons}")
@@ -363,7 +378,7 @@ class DifferentDatesTests(unittest.TestCase):
     def test_no_warning_when_dates_match(self):
         rows = [row(d, DEP, RET, 250000) for d in days_back(7)]
         h = RouteHistory.from_groups([("probe", rows)], "ICN", "KIX", TODAY, TH)
-        v = deals.judge(200000, h, nights=3, dep=DEP, ret=RET, rules=RULES)
+        v = J(200000, h, nights=3, dep=DEP, ret=RET, rules=RULES)
         self.assertEqual(v.basis, LEVEL_PAIR)
         self.assertFalse(any("검색한 날짜" in r for r in v.reasons))
 
@@ -371,7 +386,7 @@ class DifferentDatesTests(unittest.TestCase):
 class NoScoreTests(unittest.TestCase):
     def test_verdict_has_reasons_and_no_score(self):
         rows = [row(d, DEP, RET, 200000) for d in days_back(7)]
-        v = deals.judge(170000, hist(rows), nights=3, dep=DEP, ret=RET, rules=RULES)
+        v = J(170000, hist(rows), nights=3, dep=DEP, ret=RET, rules=RULES)
         self.assertTrue(v.reasons)
         self.assertFalse(hasattr(v, "score"))
         self.assertTrue(v.summary.startswith("[DEAL]"))

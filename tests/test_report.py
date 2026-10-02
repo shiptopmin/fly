@@ -11,7 +11,7 @@ import os
 import shutil
 import tempfile
 import unittest
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from types import SimpleNamespace
 
 import config
@@ -46,8 +46,9 @@ class ReportUsesSameEvidenceTests(unittest.TestCase):
         self.route = SimpleNamespace(origin="ICN", destination="TST", year=2026, month=11,
                                      min_nights=1, max_nights=7, history_file=self.tracker)
         self.dep, self.ret = date(2026, 11, 10), date(2026, 11, 13)
+        # 과거 7일 + 이번 수집(TODAY) = 8일치. 판정이 열리는 최소 이력(7일)을 채운다.
         write_csv(self.tracker, [row(TODAY - timedelta(days=i), self.dep, self.ret, 250000)
-                                 for i in range(6, -1, -1)])
+                                 for i in range(7, -1, -1)])
 
     def tearDown(self):
         shutil.rmtree(self.dir, ignore_errors=True)
@@ -58,35 +59,56 @@ class ReportUsesSameEvidenceTests(unittest.TestCase):
                             sources=[("tracker", self.tracker), ("confirm", self.confirm)])
 
     def test_status_and_card_use_cheaper_confirm_observation(self):
-        cheap = (date(2026, 11, 20), date(2026, 11, 23))     # 대상 월 안
+        cheap = (date(2026, 11, 20), date(2026, 11, 23))     # 대상 월 안, 같은 3박
         rp = self._report([row(TODAY - timedelta(days=4), *cheap, 200000)])
         self.assertEqual(rp.current_min, 250000)
         self.assertEqual(rp.s_all.low, 200000, "카드는 정밀검색에서 본 더 싼 값을 보여야 합니다")
-        self.assertNotIn("🟢", rp.status, f"이미 더 싼 값을 봤으므로 최저가라고 하면 안 됩니다: {rp.status}")
-        self.assertIn("+50,000원", rp.status)
         self.assertEqual(rp.observed_low_info["source"], "confirm")
+        self.assertFalse(rp.observed_low_is_current)
+        self.assertNotIn("신저가", rp.status, f"이미 더 싼 값을 봤으므로 신저가라고 하면 안 됩니다: {rp.status}")
+        self.assertTrue(any("200,000" in r for r in rp.verdict.reasons), rp.verdict.reasons)
+
+    def test_status_is_the_verdict_title(self):
+        """상단 상태 문구와 판정 블록은 판정 결과 하나를 공유한다 (따로 계산하지 않음)."""
+        rp = self._report([])
+        self.assertEqual(rp.status, rp.verdict.title)
+        self.assertIsNotNone(rp.verdict_trip)
 
     def test_same_history_object_is_shared_with_verdict(self):
         cheap = (date(2026, 11, 20), date(2026, 11, 23))
         rp = self._report([row(TODAY - timedelta(days=4), *cheap, 200000)])
         self.assertEqual(set(rp.hist.sources), {"tracker", "confirm"})
         t = rp.top[0]
-        v = deals.judge(t.price, rp.hist, nights=t.nights, dep=t.departure_date,
-                        ret=t.return_date, rules=config.DEAL_RULES)
+        v = deals.judge(t.price, rp.hist, datetime.fromisoformat(rp.latest_collected_at), nights=t.nights,
+                        dep=t.departure_date, ret=t.return_date, rules=config.DEAL_RULES)
+        self.assertEqual(v, rp.verdict)
         self.assertNotIn("below_low_all", v.passed)
-        self.assertTrue(any("confirm" in r for r in v.reasons))
 
-    def test_out_of_scope_observation_is_not_counted(self):
-        """다른 달 출발 관측은 이 노선(11월) 카드의 '수집 이후 최저'에 들어가면 안 됩니다."""
+    def test_out_of_scope_observation_is_not_counted_in_the_card(self):
+        """다른 달 출발 관측은 이 노선(11월) 카드의 '수집 이후 관측 최저'에 들어가면 안 된다."""
         other_month = (date(2026, 10, 20), date(2026, 10, 23))
         rp = self._report([row(TODAY - timedelta(days=4), *other_month, 150000)])
         self.assertEqual(rp.s_all.low, 250000)
-        self.assertIn("🟢", rp.status)
+        self.assertEqual(rp.status, rp.verdict.title)
 
-    def test_without_extra_sources_behaves_as_before(self):
+    def test_current_observation_low_is_marked_as_current(self):
+        """이번 수집이 곧 신저가인 경우: 카드는 '이번 수집' 으로 표시하고, 상태와 판정이 신저가로 일치한다."""
+        prices = [250000] * 7 + [225000]                      # 어제까지 250,000원, 이번 수집 225,000원
+        write_csv(self.tracker, [row(TODAY - timedelta(days=7 - i), self.dep, self.ret, p)
+                                 for i, p in enumerate(prices)])
+        rp = self._report([])
+        self.assertEqual(rp.current_min, 225000)
+        self.assertEqual(rp.s_all.low, 225000)
+        self.assertTrue(rp.observed_low_is_current)
+        self.assertEqual(rp.status, rp.verdict.title)
+        self.assertTrue(rp.status.startswith("WATCH · 신저가"), rp.status)
+        self.assertIn("below_low_all", rp.verdict.passed)     # 이전에는 자기 자신과 동률이 되어 통과하지 못했다
+
+    def test_tie_with_past_low_is_not_marked_as_current_low(self):
         rp = self._report([])
         self.assertEqual(rp.s_all.low, 250000)
-        self.assertIn("🟢 수집 이후 관측 최저가", rp.status)
+        self.assertFalse(rp.observed_low_is_current)          # 가장 이른 동일 가격 관측이 기준
+        self.assertTrue(rp.status.startswith("NORMAL"), rp.status)
 
 
 if __name__ == "__main__":

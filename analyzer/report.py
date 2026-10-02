@@ -11,9 +11,9 @@ analyze.py(터미널 출력)와 build_dashboard.py(HTML)가 같은 숫자를 쓰
 평균은 추세용이므로 기존대로 Tracker 의 날짜별 대표값(시계열)으로 계산합니다.
 """
 from dataclasses import dataclass, field, replace
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
-from . import stats
+from . import deals, stats
 from .combinations import load_rows, latest_run_rows, build_trips, group_by_nights
 from .history import RouteHistory, thresholds_from_config
 
@@ -42,6 +42,9 @@ class Report:
     groups: dict = field(default_factory=dict)   # {nights: [Trip]} 전체 조합
     hist: object = None               # 판정 블록과 공유하는 RouteHistory (모든 출처)
     observed_low_info: dict = None    # 수집 이후 관측 최저가를 언제/어느 출처에서 봤는지
+    observed_low_is_current: bool = False   # 그 최저가가 이번 수집(현재 관측)인지
+    verdict: object = None            # 이 페이지의 판정 결과 하나. 상단 상태 문구와 판정 블록이 함께 씁니다
+    verdict_trip: object = None       # 판정한 현재 관측 (이번 수집의 최저 조합)
 
     @property
     def first_day(self) -> date:
@@ -114,6 +117,13 @@ def build_report(route, cfg, sources=None) -> Report | None:
     s30 = _with_observed_low(s30, obs_30)
     s90 = _with_observed_low(s90, obs_90)
 
+    # ---- 판정은 한 번만 합니다. 상단 상태 문구와 판정 블록은 이 결과 하나를 함께 씁니다 ----
+    # 현재 관측 = 이번 수집(트래커 최신 실행)의 최저 조합, 판정 시점 = 그 실행의 수집 시각.
+    top = stats.top_n(trips, cfg.TOP_N)[0]
+    as_of = datetime.fromisoformat(latest)
+    verdict = deals.judge(top.price, hist, as_of, nights=top.nights, dep=top.departure_date,
+                          ret=top.return_date, rules=cfg.DEAL_RULES)
+
     return Report(
         origin=route.origin, destination=route.destination,
         year=route.year, month=route.month,
@@ -121,12 +131,14 @@ def build_report(route, cfg, sources=None) -> Report | None:
         latest_collected_at=latest, total_rows=len(rows), latest_rows=len(latest_rows),
         trips=trips, series=series, current_min=current_min,
         s30=s30, s90=s90, s_all=s_all,
-        status=stats.price_status(current_min, s_all, s30,
-                                  observed_low=obs_all["price"] if obs_all else None),
+        status=verdict.title,
         change=stats.price_change(series),
         top=stats.top_n(trips, cfg.TOP_N),
         best_by_nights=stats.cheapest_by_nights(trips),
         groups=group_by_nights(trips),
         hist=hist,
         observed_low_info=obs_all,
+        observed_low_is_current=bool(obs_all and obs_all["collected_at"] == latest),
+        verdict=verdict,
+        verdict_trip=top,
     )

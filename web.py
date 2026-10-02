@@ -224,7 +224,7 @@ def search():
     for t in list(outcome.top(config.TOP_N)) + list(outcome.best_by_destination):
         key = (t.destination, t.departure_date, t.return_date)
         if key not in verdicts:
-            v = judge_trip(t, histories)
+            v = judge_trip(t, histories, outcome.started_at)
             if v is not None:
                 verdicts[key] = v
 
