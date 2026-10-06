@@ -1,7 +1,7 @@
 {
   "source": "google_flights",
-  "run_started_at": "2026-10-05T14:33:04+09:00",
-  "run_finished_at": "2026-10-05T14:35:40+09:00",
+  "run_started_at": "2026-10-06T15:15:34+09:00",
+  "run_finished_at": "2026-10-06T15:18:57+09:00",
   "headless": true,
   "routes": [
     {
@@ -13,10 +13,10 @@
         1,
         7
       ],
-      "started_at": "2026-10-05T14:33:04+09:00",
-      "finished_at": "2026-10-05T14:34:23+09:00",
-      "records_collected": 161,
-      "records_added_to_csv": 161,
+      "started_at": "2026-10-06T15:15:34+09:00",
+      "finished_at": "2026-10-06T15:17:16+09:00",
+      "records_collected": 151,
+      "records_added_to_csv": 151,
       "duplicates_skipped": 0,
       "missing_pairs": [
         "2026-10-01->2026-10-02",
@@ -46,21 +46,31 @@
         "2026-10-04->2026-10-08",
         "2026-10-04->2026-10-09",
         "2026-10-04->2026-10-10",
-        "2026-10-04->2026-10-11"
+        "2026-10-04->2026-10-11",
+        "2026-10-05->2026-10-06",
+        "2026-10-05->2026-10-07",
+        "2026-10-05->2026-10-08",
+        "2026-10-05->2026-10-09",
+        "2026-10-05->2026-10-10",
+        "2026-10-05->2026-10-11",
+        "2026-10-05->2026-10-12",
+        "2026-10-06->2026-10-07",
+        "2026-10-06->2026-10-08",
+        "2026-10-07->2026-10-08"
       ],
-      "price_semantics": "Google Flights 날짜 표 셀 가격 = 해당 출발일/귀국일 조합의 왕복 총액 (성인 1명, 필수 세금·수수료 포함, 검색 결과 중 최저가) [교차검증 7/9 페이지 성공]",
+      "price_semantics": " [교차검증 7/9 페이지 성공]",
       "semantics_verified": false,
       "blocked": false,
       "errors": [
-        "Semantics cross-check mismatch (재확인 1회 후에도 불일치): anchor=2026-10-04~2026-10-05, 선택셀이 기준일과 다름: 2026-10-05~2026-10-09 426,344원, 목록최저=426,344원, 원인=anchor_mismatch",
-        "Semantics cross-check mismatch (재확인 1회 후에도 불일치): anchor=2026-10-04~2026-10-12, 선택셀이 기준일과 다름: 2026-10-05~2026-10-12 432,819원, 목록최저=432,819원, 원인=anchor_mismatch"
+        "'날짜 표' button not found for 2026-10-04~2026-10-05",
+        "Semantics cross-check mismatch (재확인 1회 후에도 불일치): anchor=2026-10-04~2026-10-12, 선택셀이 기준일과 다름: 2026-10-06~2026-10-12 401,563원, 목록최저=401,563원, 원인=anchor_mismatch"
       ],
       "page_loads": 9,
-      "semantics_checks": 9,
-      "semantics_mismatches": 2,
+      "semantics_checks": 8,
+      "semantics_mismatches": 1,
       "price_mismatches": 0,
       "history_file": "data/history/ICN-KIX.csv",
-      "total_rows_in_csv": 4277
+      "total_rows_in_csv": 4428
     },
     {
       "route": "ICN-FUK",
@@ -71,10 +81,10 @@
         1,
         7
       ],
-      "started_at": "2026-10-05T14:34:25+09:00",
-      "finished_at": "2026-10-05T14:35:40+09:00",
-      "records_collected": 161,
-      "records_added_to_csv": 161,
+      "started_at": "2026-10-06T15:17:18+09:00",
+      "finished_at": "2026-10-06T15:18:57+09:00",
+      "records_collected": 151,
+      "records_added_to_csv": 151,
       "duplicates_skipped": 0,
       "missing_pairs": [
         "2026-10-01->2026-10-02",
@@ -104,21 +114,31 @@
         "2026-10-04->2026-10-08",
         "2026-10-04->2026-10-09",
         "2026-10-04->2026-10-10",
-        "2026-10-04->2026-10-11"
+        "2026-10-04->2026-10-11",
+        "2026-10-05->2026-10-06",
+        "2026-10-05->2026-10-07",
+        "2026-10-05->2026-10-08",
+        "2026-10-05->2026-10-09",
+        "2026-10-05->2026-10-10",
+        "2026-10-05->2026-10-11",
+        "2026-10-05->2026-10-12",
+        "2026-10-06->2026-10-07",
+        "2026-10-06->2026-10-08",
+        "2026-10-07->2026-10-08"
       ],
-      "price_semantics": "Google Flights 날짜 표 셀 가격 = 해당 출발일/귀국일 조합의 왕복 총액 (성인 1명, 필수 세금·수수료 포함, 검색 결과 중 최저가) [교차검증 7/9 페이지 성공]",
+      "price_semantics": " [교차검증 7/9 페이지 성공]",
       "semantics_verified": false,
       "blocked": false,
       "errors": [
-        "Semantics cross-check mismatch (재확인 1회 후에도 불일치): anchor=2026-10-04~2026-10-05, 선택셀이 기준일과 다름: 2026-10-05~2026-10-09 364,000원, 목록최저=364,000원, 원인=anchor_mismatch",
-        "Semantics cross-check mismatch (재확인 1회 후에도 불일치): anchor=2026-10-04~2026-10-12, 선택셀이 기준일과 다름: 2026-10-05~2026-10-12 364,000원, 목록최저=364,000원, 원인=anchor_mismatch"
+        "'날짜 표' button not found for 2026-10-04~2026-10-05",
+        "Semantics cross-check mismatch (재확인 1회 후에도 불일치): anchor=2026-10-04~2026-10-12, 선택셀이 기준일과 다름: 2026-10-06~2026-10-12 352,400원, 목록최저=352,400원, 원인=anchor_mismatch"
       ],
       "page_loads": 9,
-      "semantics_checks": 9,
-      "semantics_mismatches": 2,
+      "semantics_checks": 8,
+      "semantics_mismatches": 1,
       "price_mismatches": 0,
       "history_file": "data/history/ICN-FUK.csv",
-      "total_rows_in_csv": 3518
+      "total_rows_in_csv": 3669
     }
   ]
 }
