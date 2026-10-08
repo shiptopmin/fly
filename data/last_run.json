@@ -1,7 +1,7 @@
 {
   "source": "google_flights",
-  "run_started_at": "2026-10-07T14:53:30+09:00",
-  "run_finished_at": "2026-10-07T14:57:00+09:00",
+  "run_started_at": "2026-10-08T14:57:20+09:00",
+  "run_finished_at": "2026-10-08T15:00:41+09:00",
   "headless": true,
   "routes": [
     {
@@ -13,10 +13,10 @@
         1,
         7
       ],
-      "started_at": "2026-10-07T14:53:30+09:00",
-      "finished_at": "2026-10-07T14:55:16+09:00",
-      "records_collected": 146,
-      "records_added_to_csv": 146,
+      "started_at": "2026-10-08T14:57:20+09:00",
+      "finished_at": "2026-10-08T14:59:01+09:00",
+      "records_collected": 140,
+      "records_added_to_csv": 140,
       "duplicates_skipped": 0,
       "missing_pairs": [
         "2026-10-01->2026-10-02",
@@ -61,21 +61,27 @@
         "2026-10-06->2026-10-11",
         "2026-10-06->2026-10-12",
         "2026-10-06->2026-10-13",
-        "2026-10-07->2026-10-08"
+        "2026-10-07->2026-10-08",
+        "2026-10-07->2026-10-09",
+        "2026-10-07->2026-10-10",
+        "2026-10-07->2026-10-11",
+        "2026-10-07->2026-10-12",
+        "2026-10-07->2026-10-13",
+        "2026-10-07->2026-10-14"
       ],
       "price_semantics": " [교차검증 7/9 페이지 성공]",
       "semantics_verified": false,
       "blocked": false,
       "errors": [
         "'날짜 표' button not found for 2026-10-04~2026-10-05",
-        "Semantics cross-check mismatch (재확인 1회 후에도 불일치): anchor=2026-10-04~2026-10-12, 선택셀이 기준일과 다름: 2026-10-07~2026-10-12 461,800원, 목록최저=461,800원, 원인=anchor_mismatch"
+        "Semantics cross-check mismatch (재확인 1회 후에도 불일치): anchor=2026-10-04~2026-10-12, 선택셀이 기준일과 다름: 2026-10-08~2026-10-12 486,200원, 목록최저=486,200원, 원인=anchor_mismatch"
       ],
       "page_loads": 9,
       "semantics_checks": 8,
       "semantics_mismatches": 1,
       "price_mismatches": 0,
       "history_file": "data/history/ICN-KIX.csv",
-      "total_rows_in_csv": 4574
+      "total_rows_in_csv": 4714
     },
     {
       "route": "ICN-FUK",
@@ -86,10 +92,10 @@
         1,
         7
       ],
-      "started_at": "2026-10-07T14:55:18+09:00",
-      "finished_at": "2026-10-07T14:57:00+09:00",
-      "records_collected": 146,
-      "records_added_to_csv": 146,
+      "started_at": "2026-10-08T14:59:03+09:00",
+      "finished_at": "2026-10-08T15:00:41+09:00",
+      "records_collected": 140,
+      "records_added_to_csv": 140,
       "duplicates_skipped": 0,
       "missing_pairs": [
         "2026-10-01->2026-10-02",
@@ -134,21 +140,27 @@
         "2026-10-06->2026-10-11",
         "2026-10-06->2026-10-12",
         "2026-10-06->2026-10-13",
-        "2026-10-07->2026-10-08"
+        "2026-10-07->2026-10-08",
+        "2026-10-07->2026-10-09",
+        "2026-10-07->2026-10-10",
+        "2026-10-07->2026-10-11",
+        "2026-10-07->2026-10-12",
+        "2026-10-07->2026-10-13",
+        "2026-10-07->2026-10-14"
       ],
       "price_semantics": " [교차검증 7/9 페이지 성공]",
       "semantics_verified": false,
       "blocked": false,
       "errors": [
         "'날짜 표' button not found for 2026-10-04~2026-10-05",
-        "Semantics cross-check mismatch (재확인 1회 후에도 불일치): anchor=2026-10-04~2026-10-12, 선택셀이 기준일과 다름: 2026-10-07~2026-10-12 363,910원, 목록최저=363,910원, 원인=anchor_mismatch"
+        "Semantics cross-check mismatch (재확인 1회 후에도 불일치): anchor=2026-10-04~2026-10-12, 선택셀이 기준일과 다름: 2026-10-08~2026-10-12 568,200원, 목록최저=568,200원, 원인=anchor_mismatch"
       ],
       "page_loads": 9,
       "semantics_checks": 8,
       "semantics_mismatches": 1,
       "price_mismatches": 0,
       "history_file": "data/history/ICN-FUK.csv",
-      "total_rows_in_csv": 3815
+      "total_rows_in_csv": 3955
     }
   ]
 }
