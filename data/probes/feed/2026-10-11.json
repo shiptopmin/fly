@@ -1,0 +1,179 @@
+{
+  "date": "2026-10-11",
+  "run_at": "2026-10-11T17:38:17+09:00",
+  "env": "actions",
+  "origin": "ICN",
+  "anchor": {
+    "dep": "2026-11-10",
+    "ret": "2026-11-13",
+    "nights": 3,
+    "months_ahead": 1,
+    "pairs": 36
+  },
+  "page_loads": 14,
+  "elapsed_sec": 118,
+  "blocked": false,
+  "probes": [
+    {
+      "code": "FUK",
+      "label": "후쿠오카(FUK)",
+      "records": 36,
+      "saved": 36,
+      "mismatches": 0,
+      "probe_days": 10,
+      "best_price": 231600,
+      "best_dep": "2026-11-10",
+      "best_ret": "2026-11-11",
+      "best_nights": 1,
+      "source_tag": "최저가",
+      "candidate_label": "NORMAL",
+      "candidate_reason": "평소 수준"
+    },
+    {
+      "code": "HND",
+      "label": "도쿄(HND)",
+      "records": 36,
+      "saved": 36,
+      "mismatches": 0,
+      "probe_days": 10,
+      "best_price": 372310,
+      "best_dep": "2026-11-10",
+      "best_ret": "2026-11-12",
+      "best_nights": 2,
+      "source_tag": "최저가",
+      "candidate_label": "WATCH",
+      "candidate_reason": "약한 신호 (같은 일정 전일 대비 11.3% 하락)"
+    },
+    {
+      "code": "KIX",
+      "label": "오사카(KIX)",
+      "records": 36,
+      "saved": 36,
+      "mismatches": 0,
+      "probe_days": 10,
+      "best_price": 251000,
+      "best_dep": "2026-11-10",
+      "best_ret": "2026-11-12",
+      "best_nights": 2,
+      "source_tag": "최저가",
+      "candidate_label": "NORMAL",
+      "candidate_reason": "평소 수준"
+    },
+    {
+      "code": "NRT",
+      "label": "도쿄(NRT)",
+      "records": 36,
+      "saved": 36,
+      "mismatches": 0,
+      "probe_days": 10,
+      "best_price": 269137,
+      "best_dep": "2026-11-10",
+      "best_ret": "2026-11-11",
+      "best_nights": 1,
+      "source_tag": "최저가",
+      "candidate_label": "NORMAL",
+      "candidate_reason": "평소 수준"
+    },
+    {
+      "code": "CTS",
+      "label": "삿포로(CTS)",
+      "records": 36,
+      "saved": 36,
+      "mismatches": 0,
+      "probe_days": 10,
+      "best_price": 324200,
+      "best_dep": "2026-11-11",
+      "best_ret": "2026-11-12",
+      "best_nights": 1,
+      "source_tag": "저가",
+      "candidate_label": "NORMAL",
+      "candidate_reason": "평소 수준"
+    },
+    {
+      "code": "NGO",
+      "label": "나고야(NGO)",
+      "records": 36,
+      "saved": 36,
+      "mismatches": 0,
+      "probe_days": 10,
+      "best_price": 273600,
+      "best_dep": "2026-11-10",
+      "best_ret": "2026-11-11",
+      "best_nights": 1,
+      "source_tag": "저가",
+      "candidate_label": "NORMAL",
+      "candidate_reason": "평소 수준"
+    },
+    {
+      "code": "OKA",
+      "label": "오키나와(OKA)",
+      "records": 36,
+      "saved": 36,
+      "mismatches": 0,
+      "probe_days": 10,
+      "best_price": 267583,
+      "best_dep": "2026-11-10",
+      "best_ret": "2026-11-12",
+      "best_nights": 2,
+      "source_tag": "최저가",
+      "candidate_label": "NORMAL",
+      "candidate_reason": "평소 수준"
+    },
+    {
+      "code": "KOJ",
+      "label": "가고시마(KOJ)",
+      "records": 36,
+      "saved": 36,
+      "mismatches": 0,
+      "probe_days": 10,
+      "best_price": 235500,
+      "best_dep": "2026-11-10",
+      "best_ret": "2026-11-11",
+      "best_nights": 1,
+      "source_tag": "최저가",
+      "candidate_label": "NORMAL",
+      "candidate_reason": "평소 수준"
+    }
+  ],
+  "candidates": [
+    "HND"
+  ],
+  "confirmations": [
+    {
+      "code": "HND",
+      "label": "도쿄(HND)",
+      "price": 372310,
+      "dep": "2026-11-10",
+      "ret": "2026-11-12",
+      "nights": 2,
+      "final_label": "WATCH",
+      "final_reason": "약한 신호 (같은 일정 전일 대비 11.3% 하락)",
+      "final_reasons": [
+        "판정 시점 2026-10-11 17:38: 이 시각 이전 관측 867건과 비교 (현재 관측은 비교 대상에서 제외)",
+        "비교 기준: 11월 출발 2박 모든 일정 (이력 10일치, 등급 OK, 관측 출처 probe 720건, confirm 147건)",
+        "③ 최근 30일 일별 최저 평균 388,767원(11월 출발 2박 모든 일정)보다 4.2% 낮음 (WATCH 기준 5% 미만)",
+        "① 수집 이후 관측 최저 353,088원 대비 +19,222원 (2026-10-07 probe 기준)",
+        "② 동일 일정(11/10→11/12) 관측 최저 353,088원 대비 +19,222원",
+        "직전 수집일(2026-10-10) 419,747원 대비 -47,437원 (11.3% 하락)"
+      ]
+    }
+  ],
+  "tracker_comparison": {
+    "FUK": {
+      "tracker_rows_today": 119,
+      "tracker_full_min": 215699,
+      "tracker_window_min": null,
+      "probe_min": 231600,
+      "pairs_in_window": 0,
+      "missed_pct": 7.37
+    },
+    "KIX": {
+      "tracker_rows_today": 119,
+      "tracker_full_min": 241500,
+      "tracker_window_min": null,
+      "probe_min": 251000,
+      "pairs_in_window": 0,
+      "missed_pct": 3.93
+    }
+  }
+}
