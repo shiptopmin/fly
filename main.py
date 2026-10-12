@@ -23,6 +23,7 @@ import config
 import storage
 from collectors.google_flights import GoogleFlightsCollector
 from routes import load_routes
+from search_conditions import SearchQuery
 
 KST = timezone(timedelta(hours=9))
 
@@ -43,6 +44,22 @@ def collect_route(collector, route, headless, log):
     log.debug("Route: %s  Target month: %04d-%02d  Nights: %d..%d",
               route.label, route.year, route.month, route.min_nights, route.max_nights)
     started = datetime.now(KST).replace(microsecond=0)
+    # 남은 출발일이 하나도 없는 달(예: 월말 마지막 날)은 접속하지 않고 건너뜁니다. 실패가 아닙니다.
+    pairs = SearchQuery.for_month(route.origin, route.destination, route.year, route.month,
+                                  route.min_nights, route.max_nights,
+                                  config.ALLOW_NEXT_MONTH_RETURN).needed_pairs()
+    if not any(d >= started.date() for d, _ in pairs):
+        print(f"{route.label} {route.month_label}: 남은 출발일이 없어 수집하지 않습니다 (건너뜀)")
+        return {"route": route.slug, "origin": route.origin, "destination": route.destination,
+                "target_month": f"{route.year:04d}-{route.month:02d}",
+                "nights_range": [route.min_nights, route.max_nights],
+                "started_at": started.isoformat(), "finished_at": started.isoformat(),
+                "records_collected": 0, "records_added_to_csv": 0, "duplicates_skipped": 0,
+                "missing_pairs": [], "price_semantics": "", "semantics_verified": False,
+                "blocked": False, "errors": [], "page_loads": 0, "semantics_checks": 0,
+                "semantics_mismatches": 0, "price_mismatches": 0,
+                "history_file": route.history_file, "skipped": "남은 출발일 없음",
+                "total_rows_in_csv": storage.count_rows(route.history_file)}, True
     result = collector.collect(
         origin=route.origin,
         destination=route.destination,
@@ -138,7 +155,7 @@ def main():
     )
     log = logging.getLogger("main")
 
-    routes = load_routes()
+    routes = load_routes(datetime.now(KST).date())   # 끝난 달은 빠지고, 이번 달 + 다음 달이 들어옵니다
     log.debug("Flight Tracker started")
     log.debug("Source: %s", config.SOURCE)
     log.debug("Routes: %s", ", ".join(r.slug for r in routes))
@@ -166,7 +183,7 @@ def main():
         "routes": summaries,
     })
     print(f"\n총 {len(summaries)}/{len(routes)}개 노선 처리, "
-          f"성공 {sum(1 for s in summaries if s['records_collected'] and not s['blocked'])}개")
+          f"성공 {sum(1 for s in summaries if (s['records_collected'] and not s['blocked']) or s.get('skipped'))}개")
     return 0 if all_ok and len(summaries) == len(routes) else 1
 
 

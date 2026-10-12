@@ -8,12 +8,25 @@
 # --- 추적 노선 목록 (Tracker 가 매일 수집하는 노선) ---
 # 한 줄 = 노선 하나. 추가하려면 같은 형식으로 한 줄 넣으면 됩니다.
 #   origin/destination : IATA 공항 코드 (ICN 인천, GMP 김포, KIX 오사카, FUK 후쿠오카, NRT 도쿄 ...)
-#   year/month         : 추적할 여행월
+#   year/month         : (선택) 적으면 그 달만 추적. 적지 않으면 아래 TRACK_MONTH_OFFSETS 로 매달 자동 추적
 #   min_nights/max_nights : 생략하면 아래 MIN_NIGHTS / MAX_NIGHTS 기본값 사용
 ROUTES = [
-    {"origin": "ICN", "destination": "KIX", "year": 2026, "month": 10},
-    {"origin": "ICN", "destination": "FUK", "year": 2026, "month": 10},
+    {"origin": "ICN", "destination": "KIX"},
+    {"origin": "ICN", "destination": "FUK"},
 ]
+# 자동 추적 월: 0 = 이번 달, 1 = 다음 달. (0, 1) 이면 항상 이번 달과 다음 달을 함께 수집합니다.
+# 다음 달을 미리 수집하므로 그 달이 '이번 달'이 되었을 때 이미 자체 이력이 쌓여 있습니다.
+TRACK_MONTH_OFFSETS = (0, 1)
+TRACK_FIRST_MONTH = (2026, 10)      # 이 달부터 화면에 남깁니다 (지난 달은 수집을 멈추고 '종료'로 표시)
+# 월별 파일이 생기기 전부터 쓰던 식별자(이력 CSV / 상세 페이지 주소)를 그대로 이어받는 달.
+# 여기 없는 달의 식별자는 '노선-연-월' 입니다 (예: ICN-KIX-2026-11).
+LEGACY_SLUGS = {
+    ("ICN", "KIX", 2026, 10): "ICN-KIX",
+    ("ICN", "FUK", 2026, 10): "ICN-FUK",
+}
+# 화면(홈/상세 페이지)에 공개할 마지막 달. 이 달 이후는 수집만 하고 판정 규칙 검증이 끝날 때까지 숨깁니다.
+# 검증이 끝나면 올리거나(예: (2026, 11)) None 으로 바꿉니다 (None = 모두 공개).
+PUBLIC_THROUGH = (2026, 10)
 
 # --- 숙박일수 기본 범위 (노선에 따로 적지 않으면 이 값 사용) ---
 MIN_NIGHTS = 1

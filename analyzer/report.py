@@ -106,7 +106,7 @@ def build_report(route, cfg, sources=None) -> Report | None:
     # ---- 판정 블록과 같은 근거로 '최저가' 값을 다시 구합니다 ----
     if sources is None:
         from routes import observation_sources   # 순환 import 를 피하려고 여기서 불러옵니다
-        sources = observation_sources(route.origin, route.destination)
+        sources = observation_sources(route.origin, route.destination, tracker_file=route.history_file)
     hist = RouteHistory.from_files(sources, route.origin, route.destination,
                                    today, thresholds_from_config(cfg))
     keep = scope_filter(route, cfg)

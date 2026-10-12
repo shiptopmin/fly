@@ -88,7 +88,7 @@ def main():
     parser.add_argument("--all", action="store_true", help="모든 조합 목록도 출력")
     args = parser.parse_args()
 
-    routes = load_routes()
+    routes = load_routes(include_ended=True)
     if args.route:
         routes = [r for r in routes if r.slug == args.route.upper()]
         if not routes:

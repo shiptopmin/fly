@@ -24,7 +24,7 @@ collectors/           수집 계층 (google_flights.py) - 교체 가능
 analyzer/             분석 계층 (combinations, stats, report, history, deals, charts) - 노선별로 따로 계산
 data/diagnostics/     가격 의미 검증 기록 (append-only). 불일치 사실만 남기고 가격은 보정하지 않음
 storage.py            CSV 누적 저장
-data/history/<노선>.csv   노선별 가격 이력 (커밋됨)  예: data/history/ICN-KIX.csv
+data/history/<노선>[-연-월].csv   (노선, 월) 별 가격 이력 (커밋됨)  예: data/history/ICN-KIX.csv(10월), ICN-KIX-2026-11.csv
 data/searches/        일회성 검색 결과 (로컬 전용, 커밋 안 함)
 docs/index.html       홈: 추적 노선 카드 (GitHub Pages)
 docs/routes/          노선별 상세 대시보드
@@ -37,13 +37,20 @@ docs/routes/          노선별 상세 대시보드
 
 ```python
 ROUTES = [
-    {"origin": "ICN", "destination": "KIX", "year": 2026, "month": 10},
-    {"origin": "ICN", "destination": "FUK", "year": 2026, "month": 10},
-    {"origin": "GMP", "destination": "HND", "year": 2026, "month": 12, "min_nights": 2, "max_nights": 4},
+    {"origin": "ICN", "destination": "KIX"},
+    {"origin": "ICN", "destination": "FUK"},
+    {"origin": "GMP", "destination": "HND", "min_nights": 2, "max_nights": 4},
 ]
 ```
 
-노선마다 `data/history/<출발>-<도착>.csv` 가 따로 만들어지고 통계도 노선별로 따로 계산됩니다.
+- 월을 적지 않으면 **이번 달 + 다음 달**을 매일 함께 수집합니다 (`TRACK_MONTH_OFFSETS = (0, 1)`).
+  다음 달을 미리 수집하므로 그 달이 이번 달이 되었을 때 자체 이력이 이미 쌓여 있습니다. 매달 1일이 되면 새 '다음 달'이 자동으로 추가됩니다.
+- 한 달만 추적하고 싶으면 `"year": 2026, "month": 12` 를 적습니다.
+- (노선, 월) 마다 이력 파일과 상세 페이지가 따로 만들어집니다: `data/history/ICN-KIX-2026-11.csv`, `docs/routes/ICN-KIX-2026-11.html`.
+  10월 분만 이전부터 쓰던 이름(`ICN-KIX.csv`, `ICN-KIX.html`)을 그대로 씁니다(`LEGACY_SLUGS`).
+  한 파일에 두 달을 쌓으면 이력의 '하루'(그날 마지막 실행)가 한 달만 남아 다른 달의 하루가 사라지므로 파일을 나눕니다.
+- 달이 완전히 지나면 수집을 멈추고 화면에는 마지막 데이터로 '종료'로 남습니다. 남은 출발일이 없는 날은 접속하지 않고 건너뜁니다(실패 아님).
+- 새 달은 수집만 하고 화면에서는 숨깁니다(`PUBLIC_THROUGH`). 판정 규칙 검증이 끝난 뒤 올립니다.
 
 ## 로컬 실행 (Anaconda Prompt)
 

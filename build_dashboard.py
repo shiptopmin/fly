@@ -88,14 +88,22 @@ def verdict_block(rp):
             f'<ul class="vreasons">{reasons}</ul></div>')
 
 
+def month_sources(hist, ym):
+    """{출처이름: 그 출발월 행 수}. 그래프 설명에 '이 그래프가 실제로 쓴 관측'만 보이도록 월로 한정합니다."""
+    key = f"{ym[0]:04d}-{ym[1]:02d}"
+    counts = {label: sum(1 for r in rows if r["departure_date"][:7] == key) for label, rows in hist.groups}
+    return {k: v for k, v in counts.items() if v}
+
+
 def history_block(hist, rp):
-    """가격 이력 그래프. 노선 전체 흐름 + 숙박일수별."""
-    route_s = hist.route()
-    src = ", ".join(f"{k} {v}건" for k, v in hist.sources.items())
+    """가격 이력 그래프. 노선 전체 흐름 + 숙박일수별. 이 페이지의 출발월 관측만 그립니다(다른 달 출발 가격이 섞이지 않게)."""
+    ym = (rp.year, rp.month)
+    route_s = hist.route(ym)
+    src = ", ".join(f"{k} {v}건" for k, v in month_sources(hist, ym).items())
     main = charts.line_chart(route_s.points, caption=f"그날 관측된 조합 중 최저가 (출처: {src})")
     small = ""
     for n in range(rp.min_nights, rp.max_nights + 1):
-        s = hist.nights(n)
+        s = hist.nights(n, ym)
         if not s.points:
             continue
         small += (f'<div class="chart-cell"><div class="chart-title">{n}박</div>'
@@ -106,7 +114,7 @@ def history_block(hist, rp):
     return main + small
 
 
-def render(rp, hist, generated_at):
+def render(rp, hist, generated_at, ended=False):
     change_html = "비교할 이전 수집일 없음 (수집일 2일 이상 필요)"
     if rp.change is not None:
         c = rp.change
@@ -194,7 +202,7 @@ def render(rp, hist, generated_at):
   <h1>✈️ Flight Price Tracker</h1>
   <div class="route">{esc(rp.origin)} → {esc(rp.destination)}</div>
   <div class="muted">{rp.year}년 {rp.month}월 · 숙박 {rp.min_nights}~{rp.max_nights}박 · 왕복 총액(성인 1명, 세금 포함)</div>
-  <div class="muted">마지막 업데이트 {esc(fmt_kst(rp.latest_collected_at))}</div>
+  <div class="muted">마지막 업데이트 {esc(fmt_kst(rp.latest_collected_at))}</div>{ENDED_NOTE if ended else ""}
   <div class="status">상태: {esc(rp.status)}</div>
 
   <div class="grid">
@@ -239,7 +247,11 @@ def render(rp, hist, generated_at):
 """
 
 
-def route_card(route, rp):
+ENDED_NOTE = ('\n  <div class="muted">종료된 달 - 더 이상 수집하지 않습니다 '
+              '(마지막 수집 데이터 기준)</div>')
+
+
+def route_card(route, rp, ended=False):
     """홈 화면의 노선 카드 하나. rp 가 None 이면 아직 수집 전."""
     href = f"routes/{route.slug}.html"
     if rp is None:
@@ -251,7 +263,7 @@ def route_card(route, rp):
     avg30 = f"{s30.avg:,.0f}원" if s30.enough else f"데이터 부족 ({s30.days}일치)"
     return (f'<a class="rcard" href="{href}">'
             f'<div class="rtitle">{esc(route.label)}</div>'
-            f'<div class="muted">{esc(route.month_label)} · 숙박 {rp.min_nights}~{rp.max_nights}박 · '
+            f'<div class="muted">{esc(route.month_label)}{" (종료)" if ended else ""} · 숙박 {rp.min_nights}~{rp.max_nights}박 · '
             f'마지막 수집 {esc(fmt_kst(rp.latest_collected_at))}</div>'
             f'<dl class="rstats">'
             f'<dt>현재 최저가</dt><dd class="big">{won(rp.current_min)}</dd>'
@@ -261,9 +273,9 @@ def route_card(route, rp):
             f'</dl><div class="status-line">{esc(rp.status)}</div></a>')
 
 
-def render_home(items, generated_at):
+def render_home(items, generated_at, today=None):
     """items = [(route, report 또는 None), ...]"""
-    cards = "".join(route_card(route, rp) for route, rp in items)
+    cards = "".join(route_card(route, rp, ended=bool(today and route.ended(today))) for route, rp in items)
     return f"""<!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -308,9 +320,14 @@ def render_home(items, generated_at):
 
 def main():
     generated_at = datetime.now(KST).strftime("%Y-%m-%d %H:%M KST")
-    routes = load_routes()
+    today = datetime.now(KST).date()
+    routes = load_routes(today, include_ended=True)   # 끝난 달도 마지막 데이터로 남깁니다
     items = []
     for route in routes:
+        if not route.public:
+            # 수집은 하지만 판정 규칙 검증이 끝나기 전까지 화면에는 내보내지 않습니다
+            print(f"{route.slug}: 비공개 (config.PUBLIC_THROUGH) - 페이지/카드 생략")
+            continue
         rp = build_report(route, config)   # 노선별 이력 파일만 읽음 (노선 간 혼합 없음)
         items.append((route, rp))
         if rp is None:
@@ -318,13 +335,13 @@ def main():
             continue
         os.makedirs(os.path.dirname(route.page_file), exist_ok=True)
         # 판정 블록은 Report 가 상태 문구/최저가 카드에 쓴 것과 '같은 이력 객체'를 씁니다.
-        page = render(rp, rp.hist, generated_at)
+        page = render(rp, rp.hist, generated_at, ended=route.ended(today))
         with open(route.page_file, "w", encoding="utf-8") as f:
             f.write(page)
         print(f"{route.slug}: {route.page_file} ({len(page):,} bytes) 현재 최저가 {rp.current_min:,}원 / 조합 {len(rp.trips)}개")
 
     os.makedirs(os.path.dirname(config.DASHBOARD_FILE) or ".", exist_ok=True)
-    home = render_home(items, generated_at)
+    home = render_home(items, generated_at, today)
     with open(config.DASHBOARD_FILE, "w", encoding="utf-8") as f:
         f.write(home)
     print(f"홈 생성: {config.DASHBOARD_FILE} ({len(home):,} bytes, 노선 {len(items)}개)")
