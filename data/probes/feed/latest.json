@@ -1,6 +1,6 @@
 {
-  "date": "2026-10-15",
-  "run_at": "2026-10-15T16:16:36+09:00",
+  "date": "2026-10-16",
+  "run_at": "2026-10-16T15:59:23+09:00",
   "env": "actions",
   "origin": "ICN",
   "anchor": {
@@ -10,8 +10,8 @@
     "months_ahead": 1,
     "pairs": 36
   },
-  "page_loads": 20,
-  "elapsed_sec": 162,
+  "page_loads": 14,
+  "elapsed_sec": 117,
   "blocked": false,
   "probes": [
     {
@@ -20,8 +20,8 @@
       "records": 36,
       "saved": 36,
       "mismatches": 0,
-      "probe_days": 14,
-      "best_price": 242000,
+      "probe_days": 15,
+      "best_price": 241900,
       "best_dep": "2026-11-10",
       "best_ret": "2026-11-11",
       "best_nights": 1,
@@ -35,8 +35,8 @@
       "records": 36,
       "saved": 36,
       "mismatches": 0,
-      "probe_days": 13,
-      "best_price": 420400,
+      "probe_days": 14,
+      "best_price": 420200,
       "best_dep": "2026-11-10",
       "best_ret": "2026-11-11",
       "best_nights": 1,
@@ -50,8 +50,8 @@
       "records": 36,
       "saved": 36,
       "mismatches": 0,
-      "probe_days": 13,
-      "best_price": 255600,
+      "probe_days": 14,
+      "best_price": 251300,
       "best_dep": "2026-11-10",
       "best_ret": "2026-11-12",
       "best_nights": 2,
@@ -65,8 +65,8 @@
       "records": 36,
       "saved": 36,
       "mismatches": 0,
-      "probe_days": 14,
-      "best_price": 280900,
+      "probe_days": 15,
+      "best_price": 276400,
       "best_dep": "2026-11-10",
       "best_ret": "2026-11-11",
       "best_nights": 1,
@@ -80,14 +80,14 @@
       "records": 36,
       "saved": 36,
       "mismatches": 0,
-      "probe_days": 12,
-      "best_price": 321300,
+      "probe_days": 13,
+      "best_price": 333800,
       "best_dep": "2026-11-09",
-      "best_ret": "2026-11-16",
-      "best_nights": 7,
-      "source_tag": "최저가",
-      "candidate_label": "WATCH",
-      "candidate_reason": "동일 일정 하락 (이 일정 과거 최저보다 9.3%, 신저가 아님, 평소 대비 11.8%)"
+      "best_ret": "2026-11-10",
+      "best_nights": 1,
+      "source_tag": "",
+      "candidate_label": "NORMAL",
+      "candidate_reason": "평소 수준"
     },
     {
       "code": "NGO",
@@ -95,14 +95,14 @@
       "records": 36,
       "saved": 36,
       "mismatches": 0,
-      "probe_days": 12,
-      "best_price": 263800,
+      "probe_days": 13,
+      "best_price": 253600,
       "best_dep": "2026-11-10",
       "best_ret": "2026-11-12",
       "best_nights": 2,
       "source_tag": "최저가",
       "candidate_label": "WATCH",
-      "candidate_reason": "신저가 (이전 최저보다 6.9%, 평소 대비 12.1%)"
+      "candidate_reason": "신저가 (이전 최저보다 3.9%, 평소 대비 14.7%)"
     },
     {
       "code": "OKA",
@@ -110,8 +110,8 @@
       "records": 36,
       "saved": 36,
       "mismatches": 0,
-      "probe_days": 13,
-      "best_price": 255800,
+      "probe_days": 14,
+      "best_price": 255600,
       "best_dep": "2026-11-10",
       "best_ret": "2026-11-12",
       "best_nights": 2,
@@ -125,8 +125,8 @@
       "records": 36,
       "saved": 36,
       "mismatches": 0,
-      "probe_days": 13,
-      "best_price": 245500,
+      "probe_days": 14,
+      "best_price": 245300,
       "best_dep": "2026-11-10",
       "best_ret": "2026-11-11",
       "best_nights": 1,
@@ -136,64 +136,44 @@
     }
   ],
   "candidates": [
-    "NGO",
-    "CTS"
+    "NGO"
   ],
   "confirmations": [
     {
       "code": "NGO",
       "label": "나고야(NGO)",
-      "price": 263800,
+      "price": 253600,
       "dep": "2026-11-10",
       "ret": "2026-11-12",
       "nights": 2,
       "final_label": "WATCH",
-      "final_reason": "신저가 (이전 최저보다 6.9%, 평소 대비 12.1%)",
+      "final_reason": "신저가 (이전 최저보다 3.9%, 평소 대비 14.7%)",
       "final_reasons": [
-        "판정 시점 2026-10-15 16:17: 이 시각 이전 관측 1,380건과 비교 (현재 관측은 비교 대상에서 제외)",
-        "비교 기준: 11월 출발 2박 모든 일정 (이력 12일치, 등급 OK, 관측 출처 probe 792건, confirm 588건)",
-        "③ 최근 30일 일별 최저 평균 300,269원(11월 출발 2박 모든 일정)보다 12.1% 낮음 (DEAL 기준 15% 미만)",
-        "① 수집 이후 관측 최저 283,400원보다 6.9% 낮음 (2026-10-08 probe 기준)",
-        "② 동일 일정(11/10→11/12)의 관측 최저 283,400원보다 6.9% 낮음 (12일치) (① 신저가에 포함되는 사실이라 따로 세지 않음)",
-        "직전 수집일(2026-10-13) 대비 -27,023원 (9.3% 하락, 기준 10% 미만)"
-      ]
-    },
-    {
-      "code": "CTS",
-      "label": "삿포로(CTS)",
-      "price": 304200,
-      "dep": "2026-11-01",
-      "ret": "2026-11-02",
-      "nights": 1,
-      "final_label": "WATCH",
-      "final_reason": "약한 신호 (평소보다 7.3% 낮음) · 다른 날짜 기준 비교",
-      "final_reasons": [
-        "판정 시점 2026-10-15 16:17: 이 시각 이전 관측 1,527건과 비교 (현재 관측은 비교 대상에서 제외)",
-        "비교 기준: 11월 출발 1박 모든 일정 (이력 12일치, 등급 OK, 관측 출처 probe 792건, confirm 735건)",
-        "⚠ 비교 대상은 검색한 날짜(11/01→11/02)가 아니라 같은 숙박일수의 다른 날짜 기록입니다. 여행 날짜가 다르므로 참고치로 보세요",
-        "③ 최근 30일 일별 최저 평균 328,320원(11월 출발 1박 모든 일정)보다 7.3% 낮음 (DEAL 기준 15% 미만)",
-        "① 수집 이후 관측 최저 304,200원과 동률: 잡음 범위 (2026-10-13 confirm 기준)",
-        "② 동일 일정(11/01→11/02) 이력 1일치 (최소 5일) - 동일 일정 비교 보류",
-        "직전 수집일(2026-10-13) 304,200원과 0.0% 차이: 잡음 범위"
+        "판정 시점 2026-10-16 16:00: 이 시각 이전 관측 1,563건과 비교 (현재 관측은 비교 대상에서 제외)",
+        "비교 기준: 11월 출발 2박 모든 일정 (이력 13일치, 등급 OK, 관측 출처 probe 828건, confirm 735건)",
+        "③ 최근 30일 일별 최저 평균 297,463원(11월 출발 2박 모든 일정)보다 14.7% 낮음 (DEAL 기준 15% 미만)",
+        "① 수집 이후 관측 최저 263,800원보다 3.9% 낮음 (2026-10-15 probe 기준)",
+        "② 동일 일정(11/10→11/12)의 관측 최저 263,800원보다 3.9% 낮음 (13일치) (① 신저가에 포함되는 사실이라 따로 세지 않음)",
+        "직전 수집일(2026-10-15) 대비 -10,200원 (3.9% 하락, 기준 10% 미만)"
       ]
     }
   ],
   "tracker_comparison": {
     "FUK": {
-      "tracker_rows_today": 91,
-      "tracker_full_min": 242000,
+      "tracker_rows_today": 49,
+      "tracker_full_min": 226900,
       "tracker_window_min": null,
-      "probe_min": 242000,
+      "probe_min": 241900,
       "pairs_in_window": 0,
-      "missed_pct": 0.0
+      "missed_pct": 6.61
     },
     "KIX": {
-      "tracker_rows_today": 91,
-      "tracker_full_min": 244400,
+      "tracker_rows_today": 49,
+      "tracker_full_min": 247300,
       "tracker_window_min": null,
-      "probe_min": 255600,
+      "probe_min": 251300,
       "pairs_in_window": 0,
-      "missed_pct": 4.58
+      "missed_pct": 1.62
     }
   }
 }
