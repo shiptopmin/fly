@@ -83,7 +83,7 @@ PROBE_FEED_DIR = "data/probes/feed"        # 실행 결과 요약 (후보/정밀
 # 사전 측정(preroll): 다음 달 1일의 N일 전부터, '다다음 달' 창을 미리 재서 기록만 합니다 (0 이면 끔).
 # 월이 바뀌는 날 새 창의 같은 출발월 이력이 비어 HOLD 가 되는 일주일을 없애기 위한 것입니다.
 # 판정/후보 선정/정밀 검색에는 쓰지 않고, 창이 넘어간 뒤 그 창의 이력으로만 쓰입니다.
-PROBE_PREROLL_DAYS = 8
+PROBE_PREROLL_DAYS = 10
 PROBE_PREROLL_DIR = "data/probes/preroll"                   # 본 측정 파일과 섞지 않는 별도 폴더
 PROBE_PREROLL_STATUS = "data/probes/preroll/status.csv"     # 사전 측정 완료 여부 기록 (append-only)
 
