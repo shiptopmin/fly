@@ -132,8 +132,20 @@ class TempEnv(unittest.TestCase):
 # ----------------------------------------------------------------------
 class AnchorTests(unittest.TestCase):
     def test_boundaries(self):
-        self.assertFalse(probe.preroll_active(date(2026, 10, 23)))
-        self.assertTrue(probe.preroll_active(date(2026, 10, 24)))
+        """8일 설정의 경계 (설정값과 무관하게 8일을 명시해서 검증)."""
+        class C8:
+            PROBE_PREROLL_DAYS = 8
+        self.assertFalse(probe.preroll_active(date(2026, 10, 23), C8))
+        self.assertTrue(probe.preroll_active(date(2026, 10, 24), C8))
+        self.assertTrue(probe.preroll_active(date(2026, 10, 31), C8))
+        self.assertFalse(probe.preroll_active(date(2026, 11, 1), C8))
+
+    def test_boundaries_follow_configured_days(self):
+        """실제 설정값 PROBE_PREROLL_DAYS(N) 에 맞춰: 11/1 의 N일 전부터 월말까지 켜지고, 11/1 에는 꺼진다."""
+        n = config.PROBE_PREROLL_DAYS
+        first = date(2026, 11, 1) - timedelta(days=n)
+        self.assertFalse(probe.preroll_active(first - timedelta(days=1)))
+        self.assertTrue(probe.preroll_active(first))
         self.assertTrue(probe.preroll_active(date(2026, 10, 31)))
         self.assertFalse(probe.preroll_active(date(2026, 11, 1)))
 
@@ -142,18 +154,28 @@ class AnchorTests(unittest.TestCase):
             PROBE_PREROLL_DAYS = 0
         self.assertFalse(probe.preroll_active(date(2026, 10, 31), Cfg))
 
-    def test_every_month_has_8_days_and_anchor_continues(self):
-        """2026~2028 모든 날짜: 켜진 날의 사전 측정 기준일 == 다음 달 1일 본 측정 기준일, 달마다 정확히 8일."""
+    def _check_every_month(self, days):
+        """2026~2028 모든 날짜: 켜진 날의 사전 측정 기준일 == 다음 달 1일 본 측정 기준일, 달마다 정확히 days 일."""
+        class Cfg:
+            PROBE_PREROLL_DAYS = days
         per_month = {}
         d = date(2026, 1, 1)
         while d <= date(2028, 12, 31):
-            if probe.preroll_active(d):
+            if probe.preroll_active(d, Cfg):
                 per_month[(d.year, d.month)] = per_month.get((d.year, d.month), 0) + 1
                 nxt = probe.add_months(d, 1)
                 self.assertEqual(probe.probe_anchor(d, extra_months=1), probe.probe_anchor(nxt), d)
             d += timedelta(days=1)
-        self.assertEqual(set(per_month.values()), {8})
+        self.assertEqual(set(per_month.values()), {days})
         self.assertEqual(len(per_month), 36)
+
+    def test_every_month_has_8_days_and_anchor_continues(self):
+        """8일 설정 (설정값과 무관하게 8일을 명시해서 검증)."""
+        self._check_every_month(8)
+
+    def test_every_month_matches_configured_days(self):
+        """실제 설정값(현재 10)으로도 같은 검증: 달마다 정확히 N일, 기준일 연속성 유지."""
+        self._check_every_month(config.PROBE_PREROLL_DAYS)
 
     def test_default_anchor_unchanged(self):
         self.assertEqual(probe.probe_anchor(date(2026, 10, 24)), (date(2026, 11, 10), date(2026, 11, 13)))
