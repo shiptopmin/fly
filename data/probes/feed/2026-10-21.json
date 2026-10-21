@@ -1,0 +1,218 @@
+{
+  "date": "2026-10-21",
+  "run_at": "2026-10-21T16:25:00+09:00",
+  "env": "actions",
+  "origin": "ICN",
+  "anchor": {
+    "dep": "2026-11-10",
+    "ret": "2026-11-13",
+    "nights": 3,
+    "months_ahead": 1,
+    "pairs": 36
+  },
+  "page_loads": 26,
+  "elapsed_sec": 223,
+  "blocked": false,
+  "probes": [
+    {
+      "code": "FUK",
+      "label": "후쿠오카(FUK)",
+      "records": 36,
+      "saved": 36,
+      "mismatches": 0,
+      "probe_days": 19,
+      "best_price": 209100,
+      "best_dep": "2026-11-10",
+      "best_ret": "2026-11-11",
+      "best_nights": 1,
+      "source_tag": "최저가",
+      "candidate_label": "WATCH",
+      "candidate_reason": "신저가 (이전 최저보다 7.6%, 평소 대비 9.9%)"
+    },
+    {
+      "code": "HND",
+      "label": "도쿄(HND)",
+      "records": 36,
+      "saved": 36,
+      "mismatches": 0,
+      "probe_days": 18,
+      "best_price": 529103,
+      "best_dep": "2026-11-10",
+      "best_ret": "2026-11-12",
+      "best_nights": 2,
+      "source_tag": "최저가",
+      "candidate_label": "NORMAL",
+      "candidate_reason": "평소 수준"
+    },
+    {
+      "code": "KIX",
+      "label": "오사카(KIX)",
+      "records": 36,
+      "saved": 36,
+      "mismatches": 0,
+      "probe_days": 17,
+      "best_price": 247600,
+      "best_dep": "2026-11-10",
+      "best_ret": "2026-11-11",
+      "best_nights": 1,
+      "source_tag": "최저가",
+      "candidate_label": "NORMAL",
+      "candidate_reason": "평소 수준"
+    },
+    {
+      "code": "NRT",
+      "label": "도쿄(NRT)",
+      "records": 36,
+      "saved": 36,
+      "mismatches": 0,
+      "probe_days": 19,
+      "best_price": 279247,
+      "best_dep": "2026-11-10",
+      "best_ret": "2026-11-11",
+      "best_nights": 1,
+      "source_tag": "저가",
+      "candidate_label": "NORMAL",
+      "candidate_reason": "평소 수준"
+    },
+    {
+      "code": "CTS",
+      "label": "삿포로(CTS)",
+      "records": 36,
+      "saved": 36,
+      "mismatches": 0,
+      "probe_days": 16,
+      "best_price": 302700,
+      "best_dep": "2026-11-09",
+      "best_ret": "2026-11-11",
+      "best_nights": 2,
+      "source_tag": "저가",
+      "candidate_label": "WATCH",
+      "candidate_reason": "동일 일정 하락 (이 일정 과거 최저보다 3.4%, 신저가 아님, 평소 대비 9.1%)"
+    },
+    {
+      "code": "NGO",
+      "label": "나고야(NGO)",
+      "records": 36,
+      "saved": 36,
+      "mismatches": 0,
+      "probe_days": 16,
+      "best_price": 262700,
+      "best_dep": "2026-11-10",
+      "best_ret": "2026-11-12",
+      "best_nights": 2,
+      "source_tag": "저가",
+      "candidate_label": "WATCH",
+      "candidate_reason": "약한 신호 (평소보다 10.3% 낮음)"
+    },
+    {
+      "code": "OKA",
+      "label": "오키나와(OKA)",
+      "records": 36,
+      "saved": 36,
+      "mismatches": 0,
+      "probe_days": 19,
+      "best_price": 254700,
+      "best_dep": "2026-11-10",
+      "best_ret": "2026-11-12",
+      "best_nights": 2,
+      "source_tag": "최저가",
+      "candidate_label": "NORMAL",
+      "candidate_reason": "평소 수준"
+    },
+    {
+      "code": "KOJ",
+      "label": "가고시마(KOJ)",
+      "records": 36,
+      "saved": 36,
+      "mismatches": 0,
+      "probe_days": 18,
+      "best_price": 244700,
+      "best_dep": "2026-11-10",
+      "best_ret": "2026-11-11",
+      "best_nights": 1,
+      "source_tag": "최저가",
+      "candidate_label": "NORMAL",
+      "candidate_reason": "평소 수준"
+    }
+  ],
+  "candidates": [
+    "FUK",
+    "NGO",
+    "CTS"
+  ],
+  "confirmations": [
+    {
+      "code": "FUK",
+      "label": "후쿠오카(FUK)",
+      "price": 209100,
+      "dep": "2026-11-10",
+      "ret": "2026-11-11",
+      "nights": 1,
+      "final_label": "WATCH",
+      "final_reason": "신저가 (이전 최저보다 7.6%, 평소 대비 9.9%)",
+      "final_reasons": [
+        "판정 시점 2026-10-21 16:25: 이 시각 이전 관측 6,123건과 비교 (현재 관측은 비교 대상에서 제외)",
+        "비교 기준: 11월 출발 1박 모든 일정 (이력 19일치, 등급 OK, 관측 출처 tracker 4932건, probe 1044건, confirm 147건)",
+        "③ 최근 30일 일별 최저 평균 232,084원(11월 출발 1박 모든 일정)보다 9.9% 낮음 (DEAL 기준 15% 미만)",
+        "① 수집 이후 관측 최저 226,400원보다 7.6% 낮음 (2026-10-08 probe 기준)",
+        "② 동일 일정(11/10→11/11)의 관측 최저 226,400원보다 7.6% 낮음 (19일치) (① 신저가에 포함되는 사실이라 따로 세지 않음)",
+        "직전 수집일(2026-10-20) 236,400원 대비 -27,300원 (11.5% 하락)"
+      ]
+    },
+    {
+      "code": "NGO",
+      "label": "나고야(NGO)",
+      "price": 262700,
+      "dep": "2026-11-10",
+      "ret": "2026-11-12",
+      "nights": 2,
+      "final_label": "WATCH",
+      "final_reason": "약한 신호 (평소보다 10.3% 낮음)",
+      "final_reasons": [
+        "판정 시점 2026-10-21 16:25: 이 시각 이전 관측 1,965건과 비교 (현재 관측은 비교 대상에서 제외)",
+        "비교 기준: 11월 출발 2박 모든 일정 (이력 16일치, 등급 OK, 관측 출처 probe 936건, confirm 1029건)",
+        "③ 최근 30일 일별 최저 평균 292,964원(11월 출발 2박 모든 일정)보다 10.3% 낮음 (DEAL 기준 15% 미만)",
+        "① 수집 이후 관측 최저 253,600원 대비 +9,100원 (2026-10-16 probe 기준)",
+        "② 동일 일정(11/10→11/12) 관측 최저 253,600원 대비 +9,100원",
+        "직전 수집일(2026-10-20) 대비 -20,100원 (7.1% 하락, 기준 10% 미만)"
+      ]
+    },
+    {
+      "code": "CTS",
+      "label": "삿포로(CTS)",
+      "price": 302700,
+      "dep": "2026-11-03",
+      "ret": "2026-11-04",
+      "nights": 1,
+      "final_label": "WATCH",
+      "final_reason": "약한 신호 (평소보다 6.8% 낮음) · 다른 날짜 기준 비교",
+      "final_reasons": [
+        "판정 시점 2026-10-21 16:25: 이 시각 이전 관측 2,112건과 비교 (현재 관측은 비교 대상에서 제외)",
+        "비교 기준: 11월 출발 1박 모든 일정 (이력 16일치, 등급 OK, 관측 출처 probe 936건, confirm 1176건)",
+        "⚠ 비교 대상은 검색한 날짜(11/03→11/04)가 아니라 같은 숙박일수의 다른 날짜 기록입니다. 여행 날짜가 다르므로 참고치로 보세요",
+        "③ 최근 30일 일별 최저 평균 324,734원(11월 출발 1박 모든 일정)보다 6.8% 낮음 (DEAL 기준 15% 미만)",
+        "① 수집 이후 관측 최저 303,300원과 0.2% 차이: 잡음 범위 (2026-10-20 confirm 기준, 11/17→11/18)",
+        "② 동일 일정(11/03→11/04) 이력 4일치 (최소 5일) - 동일 일정 비교 보류",
+        "직전 수집일(2026-10-20) 대비 -10,600원 (3.4% 하락, 기준 10% 미만)"
+      ]
+    }
+  ],
+  "tracker_comparison": {
+    "FUK": {
+      "tracker_rows_today": 48,
+      "tracker_full_min": 226000,
+      "tracker_window_min": null,
+      "probe_min": 209100,
+      "pairs_in_window": 0,
+      "missed_pct": -7.48
+    },
+    "KIX": {
+      "tracker_rows_today": 48,
+      "tracker_full_min": 257958,
+      "tracker_window_min": null,
+      "probe_min": 247600,
+      "pairs_in_window": 0,
+      "missed_pct": -4.02
+    }
+  }
+}
