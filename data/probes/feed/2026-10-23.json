@@ -1,0 +1,274 @@
+{
+  "date": "2026-10-23",
+  "run_at": "2026-10-23T16:19:15+09:00",
+  "env": "actions",
+  "origin": "ICN",
+  "anchor": {
+    "dep": "2026-11-10",
+    "ret": "2026-11-13",
+    "nights": 3,
+    "months_ahead": 1,
+    "pairs": 36
+  },
+  "page_loads": 14,
+  "elapsed_sec": 119,
+  "blocked": false,
+  "probes": [
+    {
+      "code": "FUK",
+      "label": "후쿠오카(FUK)",
+      "records": 36,
+      "saved": 36,
+      "mismatches": 0,
+      "probe_days": 21,
+      "best_price": 228300,
+      "best_dep": "2026-11-10",
+      "best_ret": "2026-11-11",
+      "best_nights": 1,
+      "source_tag": "최저가",
+      "candidate_label": "NORMAL",
+      "candidate_reason": "평소 수준"
+    },
+    {
+      "code": "HND",
+      "label": "도쿄(HND)",
+      "records": 36,
+      "saved": 36,
+      "mismatches": 0,
+      "probe_days": 20,
+      "best_price": 532002,
+      "best_dep": "2026-11-10",
+      "best_ret": "2026-11-15",
+      "best_nights": 5,
+      "source_tag": "최저가",
+      "candidate_label": "NORMAL",
+      "candidate_reason": "평소 수준"
+    },
+    {
+      "code": "KIX",
+      "label": "오사카(KIX)",
+      "records": 36,
+      "saved": 36,
+      "mismatches": 0,
+      "probe_days": 19,
+      "best_price": 246900,
+      "best_dep": "2026-11-10",
+      "best_ret": "2026-11-11",
+      "best_nights": 1,
+      "source_tag": "최저가",
+      "candidate_label": "NORMAL",
+      "candidate_reason": "평소 수준"
+    },
+    {
+      "code": "NRT",
+      "label": "도쿄(NRT)",
+      "records": 36,
+      "saved": 36,
+      "mismatches": 0,
+      "probe_days": 21,
+      "best_price": 285900,
+      "best_dep": "2026-11-10",
+      "best_ret": "2026-11-11",
+      "best_nights": 1,
+      "source_tag": "최저가",
+      "candidate_label": "NORMAL",
+      "candidate_reason": "평소 수준"
+    },
+    {
+      "code": "CTS",
+      "label": "삿포로(CTS)",
+      "records": 36,
+      "saved": 36,
+      "mismatches": 0,
+      "probe_days": 18,
+      "best_price": 302100,
+      "best_dep": "2026-11-09",
+      "best_ret": "2026-11-11",
+      "best_nights": 2,
+      "source_tag": "저가",
+      "candidate_label": "WATCH",
+      "candidate_reason": "약한 신호 (평소보다 8.4% 낮음)"
+    },
+    {
+      "code": "NGO",
+      "label": "나고야(NGO)",
+      "records": 36,
+      "saved": 36,
+      "mismatches": 0,
+      "probe_days": 18,
+      "best_price": 281400,
+      "best_dep": "2026-11-11",
+      "best_ret": "2026-11-12",
+      "best_nights": 1,
+      "source_tag": "저가",
+      "candidate_label": "NORMAL",
+      "candidate_reason": "평소 수준"
+    },
+    {
+      "code": "OKA",
+      "label": "오키나와(OKA)",
+      "records": 36,
+      "saved": 36,
+      "mismatches": 0,
+      "probe_days": 21,
+      "best_price": 266846,
+      "best_dep": "2026-11-10",
+      "best_ret": "2026-11-12",
+      "best_nights": 2,
+      "source_tag": "최저가",
+      "candidate_label": "NORMAL",
+      "candidate_reason": "평소 수준"
+    },
+    {
+      "code": "KOJ",
+      "label": "가고시마(KOJ)",
+      "records": 36,
+      "saved": 36,
+      "mismatches": 0,
+      "probe_days": 20,
+      "best_price": 254000,
+      "best_dep": "2026-11-10",
+      "best_ret": "2026-11-11",
+      "best_nights": 1,
+      "source_tag": "최저가",
+      "candidate_label": "NORMAL",
+      "candidate_reason": "평소 수준"
+    }
+  ],
+  "candidates": [
+    "CTS"
+  ],
+  "confirmations": [
+    {
+      "code": "CTS",
+      "label": "삿포로(CTS)",
+      "price": 302100,
+      "dep": "2026-11-02",
+      "ret": "2026-11-04",
+      "nights": 2,
+      "final_label": "WATCH",
+      "final_reason": "약한 신호 (평소보다 8.4% 낮음)",
+      "final_reasons": [
+        "판정 시점 2026-10-23 16:19: 이 시각 이전 관측 2,478건과 비교 (현재 관측은 비교 대상에서 제외)",
+        "비교 기준: 11월 출발 2박 모든 일정 (이력 18일치, 등급 OK, 관측 출처 probe 1008건, confirm 1470건)",
+        "③ 최근 30일 일별 최저 평균 329,723원(11월 출발 2박 모든 일정)보다 8.4% 낮음 (DEAL 기준 15% 미만)",
+        "① 수집 이후 관측 최저 302,300원과 0.1% 차이: 잡음 범위 (2026-10-22 probe 기준, 11/09→11/11)",
+        "② 동일 일정(11/02→11/04) 관측 최저 302,300원과 0.1% 차이: 잡음 범위",
+        "직전 수집일(2026-10-22) 302,300원과 0.1% 차이: 잡음 범위"
+      ]
+    }
+  ],
+  "tracker_comparison": {
+    "FUK": {
+      "tracker_rows_today": 35,
+      "tracker_full_min": 245500,
+      "tracker_window_min": null,
+      "probe_min": 228300,
+      "pairs_in_window": 0,
+      "missed_pct": -7.01
+    },
+    "KIX": {
+      "tracker_rows_today": 35,
+      "tracker_full_min": 244700,
+      "tracker_window_min": null,
+      "probe_min": 246900,
+      "pairs_in_window": 0,
+      "missed_pct": 0.9
+    }
+  },
+  "preroll": {
+    "active": true,
+    "anchor": {
+      "dep": "2026-12-08",
+      "ret": "2026-12-11",
+      "pairs": 36,
+      "months_ahead": 2
+    },
+    "page_loads": 8,
+    "blocked": false,
+    "destinations": [
+      {
+        "code": "FUK",
+        "status": "complete",
+        "records": 36,
+        "saved": 36,
+        "mismatches": 0,
+        "errors": 0,
+        "problems": [],
+        "nights_counts": "1:5|2:6|3:7|4:6|5:5|6:4|7:3"
+      },
+      {
+        "code": "HND",
+        "status": "complete",
+        "records": 36,
+        "saved": 36,
+        "mismatches": 0,
+        "errors": 0,
+        "problems": [],
+        "nights_counts": "1:5|2:6|3:7|4:6|5:5|6:4|7:3"
+      },
+      {
+        "code": "KIX",
+        "status": "complete",
+        "records": 36,
+        "saved": 36,
+        "mismatches": 0,
+        "errors": 0,
+        "problems": [],
+        "nights_counts": "1:5|2:6|3:7|4:6|5:5|6:4|7:3"
+      },
+      {
+        "code": "NRT",
+        "status": "complete",
+        "records": 36,
+        "saved": 36,
+        "mismatches": 0,
+        "errors": 0,
+        "problems": [],
+        "nights_counts": "1:5|2:6|3:7|4:6|5:5|6:4|7:3"
+      },
+      {
+        "code": "CTS",
+        "status": "complete",
+        "records": 36,
+        "saved": 36,
+        "mismatches": 0,
+        "errors": 0,
+        "problems": [],
+        "nights_counts": "1:5|2:6|3:7|4:6|5:5|6:4|7:3"
+      },
+      {
+        "code": "NGO",
+        "status": "complete",
+        "records": 36,
+        "saved": 36,
+        "mismatches": 0,
+        "errors": 0,
+        "problems": [],
+        "nights_counts": "1:5|2:6|3:7|4:6|5:5|6:4|7:3"
+      },
+      {
+        "code": "OKA",
+        "status": "complete",
+        "records": 36,
+        "saved": 36,
+        "mismatches": 0,
+        "errors": 0,
+        "problems": [],
+        "nights_counts": "1:5|2:6|3:7|4:6|5:5|6:4|7:3"
+      },
+      {
+        "code": "KOJ",
+        "status": "complete",
+        "records": 36,
+        "saved": 36,
+        "mismatches": 0,
+        "errors": 0,
+        "problems": [],
+        "nights_counts": "1:5|2:6|3:7|4:6|5:5|6:4|7:3"
+      }
+    ],
+    "elapsed_sec": 71,
+    "all_complete": true
+  }
+}
