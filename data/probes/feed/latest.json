@@ -1,6 +1,6 @@
 {
-  "date": "2026-10-25",
-  "run_at": "2026-10-25T16:30:38+09:00",
+  "date": "2026-10-26",
+  "run_at": "2026-10-26T16:40:58+09:00",
   "env": "actions",
   "origin": "ICN",
   "anchor": {
@@ -10,8 +10,8 @@
     "months_ahead": 1,
     "pairs": 36
   },
-  "page_loads": 20,
-  "elapsed_sec": 166,
+  "page_loads": 14,
+  "elapsed_sec": 124,
   "blocked": false,
   "probes": [
     {
@@ -19,15 +19,15 @@
       "label": "후쿠오카(FUK)",
       "records": 36,
       "saved": 36,
-      "mismatches": 1,
-      "probe_days": 23,
-      "best_price": 218800,
+      "mismatches": 0,
+      "probe_days": 24,
+      "best_price": 230700,
       "best_dep": "2026-11-10",
       "best_ret": "2026-11-11",
       "best_nights": 1,
       "source_tag": "최저가",
-      "candidate_label": "WATCH",
-      "candidate_reason": "약한 신호 (평소보다 5.1% 낮음)"
+      "candidate_label": "NORMAL",
+      "candidate_reason": "평소 수준"
     },
     {
       "code": "HND",
@@ -35,8 +35,8 @@
       "records": 36,
       "saved": 36,
       "mismatches": 0,
-      "probe_days": 22,
-      "best_price": 531584,
+      "probe_days": 23,
+      "best_price": 531060,
       "best_dep": "2026-11-10",
       "best_ret": "2026-11-15",
       "best_nights": 5,
@@ -50,7 +50,7 @@
       "records": 36,
       "saved": 36,
       "mismatches": 0,
-      "probe_days": 21,
+      "probe_days": 22,
       "best_price": 255000,
       "best_dep": "2026-11-10",
       "best_ret": "2026-11-11",
@@ -65,8 +65,8 @@
       "records": 36,
       "saved": 36,
       "mismatches": 0,
-      "probe_days": 23,
-      "best_price": 271100,
+      "probe_days": 24,
+      "best_price": 268315,
       "best_dep": "2026-11-10",
       "best_ret": "2026-11-11",
       "best_nights": 1,
@@ -80,14 +80,14 @@
       "records": 36,
       "saved": 36,
       "mismatches": 0,
-      "probe_days": 20,
+      "probe_days": 21,
       "best_price": 302100,
       "best_dep": "2026-11-10",
-      "best_ret": "2026-11-12",
-      "best_nights": 2,
+      "best_ret": "2026-11-11",
+      "best_nights": 1,
       "source_tag": "저가",
       "candidate_label": "WATCH",
-      "candidate_reason": "약한 신호 (평소보다 7.6% 낮음)"
+      "candidate_reason": "동일 일정 하락 (이 일정 과거 최저보다 3.2%, 신저가 아님, 평소 대비 6.0%)"
     },
     {
       "code": "NGO",
@@ -95,7 +95,7 @@
       "records": 36,
       "saved": 36,
       "mismatches": 0,
-      "probe_days": 20,
+      "probe_days": 21,
       "best_price": 281300,
       "best_dep": "2026-11-11",
       "best_ret": "2026-11-12",
@@ -110,8 +110,8 @@
       "records": 36,
       "saved": 36,
       "mismatches": 0,
-      "probe_days": 23,
-      "best_price": 266676,
+      "probe_days": 24,
+      "best_price": 266462,
       "best_dep": "2026-11-10",
       "best_ret": "2026-11-12",
       "best_nights": 2,
@@ -125,10 +125,10 @@
       "records": 36,
       "saved": 36,
       "mismatches": 0,
-      "probe_days": 22,
-      "best_price": 254300,
-      "best_dep": "2026-11-10",
-      "best_ret": "2026-11-11",
+      "probe_days": 23,
+      "best_price": 244300,
+      "best_dep": "2026-11-11",
+      "best_ret": "2026-11-12",
       "best_nights": 1,
       "source_tag": "최저가",
       "candidate_label": "NORMAL",
@@ -136,59 +136,39 @@
     }
   ],
   "candidates": [
-    "FUK",
     "CTS"
   ],
   "confirmations": [
     {
-      "code": "FUK",
-      "label": "후쿠오카(FUK)",
-      "price": 218800,
-      "dep": "2026-11-03",
-      "ret": "2026-11-04",
-      "nights": 1,
-      "final_label": "WATCH",
-      "final_reason": "약한 신호 (평소보다 5.1% 낮음) · 다른 날짜 기준 비교",
-      "final_reasons": [
-        "판정 시점 2026-10-25 16:30: 이 시각 이전 관측 6,687건과 비교 (현재 관측은 비교 대상에서 제외)",
-        "비교 기준: 11월 출발 1박 모든 일정 (이력 23일치, 등급 OK, 관측 출처 tracker 5058건, probe 1188건, confirm 441건)",
-        "⚠ 비교 대상은 검색한 날짜(11/03→11/04)가 아니라 같은 숙박일수의 다른 날짜 기록입니다. 여행 날짜가 다르므로 참고치로 보세요",
-        "③ 최근 30일 일별 최저 평균 230,451원(11월 출발 1박 모든 일정)보다 5.1% 낮음 (DEAL 기준 15% 미만)",
-        "① 수집 이후 관측 최저 209,100원 대비 +9,700원 (2026-10-21 probe 기준, 11/10→11/11)",
-        "② 동일 일정(11/03→11/04) 이력 2일치 (최소 5일) - 동일 일정 비교 보류",
-        "직전 수집일(2026-10-24) 218,800원과 0.0% 차이: 잡음 범위"
-      ]
-    },
-    {
       "code": "CTS",
       "label": "삿포로(CTS)",
       "price": 302100,
-      "dep": "2026-11-02",
-      "ret": "2026-11-04",
-      "nights": 2,
+      "dep": "2026-11-10",
+      "ret": "2026-11-11",
+      "nights": 1,
       "final_label": "WATCH",
-      "final_reason": "약한 신호 (평소보다 7.6% 낮음)",
+      "final_reason": "동일 일정 하락 (이 일정 과거 최저보다 3.2%, 신저가 아님, 평소 대비 6.0%)",
       "final_reasons": [
-        "판정 시점 2026-10-25 16:31: 이 시각 이전 관측 2,844건과 비교 (현재 관측은 비교 대상에서 제외)",
-        "비교 기준: 11월 출발 2박 모든 일정 (이력 20일치, 등급 OK, 관측 출처 probe 1080건, confirm 1764건)",
-        "③ 최근 30일 일별 최저 평균 326,960원(11월 출발 2박 모든 일정)보다 7.6% 낮음 (DEAL 기준 15% 미만)",
-        "① 수집 이후 관측 최저 302,100원과 동률: 잡음 범위 (2026-10-23 probe 기준, 11/09→11/11)",
-        "② 동일 일정(11/02→11/04) 관측 최저 302,100원과 동률: 잡음 범위",
-        "직전 수집일(2026-10-24) 대비 -10,000원 (3.2% 하락, 기준 10% 미만)"
+        "판정 시점 2026-10-26 16:41: 이 시각 이전 관측 3,027건과 비교 (현재 관측은 비교 대상에서 제외)",
+        "비교 기준: 11월 출발 1박 모든 일정 (이력 21일치, 등급 OK, 관측 출처 probe 1116건, confirm 1911건)",
+        "③ 최근 30일 일별 최저 평균 321,288원(11월 출발 1박 모든 일정)보다 6.0% 낮음 (DEAL 기준 15% 미만)",
+        "① 수집 이후 관측 최저 302,700원과 0.2% 차이: 잡음 범위 (2026-10-21 confirm 기준, 11/03→11/04)",
+        "② 동일 일정(11/10→11/11)의 관측 최저 312,100원보다 3.2% 낮음 (21일치)",
+        "직전 수집일(2026-10-25) 대비 -10,000원 (3.2% 하락, 기준 10% 미만)"
       ]
     }
   ],
   "tracker_comparison": {
     "FUK": {
-      "tracker_rows_today": 21,
-      "tracker_full_min": 245700,
+      "tracker_rows_today": 15,
+      "tracker_full_min": 250700,
       "tracker_window_min": null,
-      "probe_min": 218800,
+      "probe_min": 230700,
       "pairs_in_window": 0,
-      "missed_pct": -10.95
+      "missed_pct": -7.98
     },
     "KIX": {
-      "tracker_rows_today": 21,
+      "tracker_rows_today": 15,
       "tracker_full_min": 245000,
       "tracker_window_min": null,
       "probe_min": 255000,
@@ -209,12 +189,16 @@
     "destinations": [
       {
         "code": "FUK",
-        "status": "complete",
+        "status": "incomplete",
         "records": 36,
         "saved": 36,
-        "mismatches": 0,
-        "errors": 0,
-        "problems": [],
+        "mismatches": 1,
+        "errors": 1,
+        "problems": [
+          "수집 오류 1건: Semantics cross-check mismatch (재확인 1회 후에도 불일치): anchor=2026-12-08~2026-12-11, 선택셀 2026-12-08~2026-12-11 250,799원, 목록최저=190원, 원인=price_mismatch",
+          "가격 의미 검증 불일치 1건",
+          "가격 의미 교차검증 미완료"
+        ],
         "nights_counts": "1:5|2:6|3:7|4:6|5:5|6:4|7:3"
       },
       {
@@ -249,13 +233,17 @@
       },
       {
         "code": "CTS",
-        "status": "complete",
-        "records": 36,
-        "saved": 36,
+        "status": "incomplete",
+        "records": 0,
+        "saved": 0,
         "mismatches": 0,
-        "errors": 0,
-        "problems": [],
-        "nights_counts": "1:5|2:6|3:7|4:6|5:5|6:4|7:3"
+        "errors": 1,
+        "problems": [
+          "저장된 행 없음",
+          "수집 오류 1건: '날짜 표' button not found for 2026-12-08~2026-12-11",
+          "가격 의미 교차검증 미완료"
+        ],
+        "nights_counts": ""
       },
       {
         "code": "NGO",
@@ -288,7 +276,7 @@
         "nights_counts": "1:5|2:6|3:7|4:6|5:5|6:4|7:3"
       }
     ],
-    "elapsed_sec": 69,
-    "all_complete": true
+    "elapsed_sec": 101,
+    "all_complete": false
   }
 }
