@@ -5920,3 +5920,13 @@
 2026-10-26T13:40:30+09:00,ICN,KIX,2026-10-29,2026-10-30,1,385000,KRW,round_trip_total,google_flights,
 2026-10-26T13:40:30+09:00,ICN,KIX,2026-10-29,2026-10-31,2,400000,KRW,round_trip_total,google_flights,
 2026-10-26T13:40:30+09:00,ICN,KIX,2026-10-30,2026-10-31,1,440030,KRW,round_trip_total,google_flights,
+2026-10-27T13:58:05+09:00,ICN,KIX,2026-10-27,2026-10-28,1,246900,KRW,round_trip_total,google_flights,최저가
+2026-10-27T13:58:05+09:00,ICN,KIX,2026-10-27,2026-10-29,2,256900,KRW,round_trip_total,google_flights,저가
+2026-10-27T13:58:05+09:00,ICN,KIX,2026-10-27,2026-10-30,3,382289,KRW,round_trip_total,google_flights,
+2026-10-27T13:58:05+09:00,ICN,KIX,2026-10-27,2026-10-31,4,390200,KRW,round_trip_total,google_flights,
+2026-10-27T13:58:05+09:00,ICN,KIX,2026-10-28,2026-10-29,1,256900,KRW,round_trip_total,google_flights,저가
+2026-10-27T13:58:05+09:00,ICN,KIX,2026-10-28,2026-10-30,2,379689,KRW,round_trip_total,google_flights,
+2026-10-27T13:58:05+09:00,ICN,KIX,2026-10-28,2026-10-31,3,391450,KRW,round_trip_total,google_flights,
+2026-10-27T13:58:05+09:00,ICN,KIX,2026-10-29,2026-10-30,1,399689,KRW,round_trip_total,google_flights,
+2026-10-27T13:58:05+09:00,ICN,KIX,2026-10-29,2026-10-31,2,410200,KRW,round_trip_total,google_flights,
+2026-10-27T13:58:05+09:00,ICN,KIX,2026-10-30,2026-10-31,1,421450,KRW,round_trip_total,google_flights,
