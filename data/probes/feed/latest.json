@@ -1,6 +1,6 @@
 {
-  "date": "2026-10-29",
-  "run_at": "2026-10-29T17:19:10+09:00",
+  "date": "2026-10-30",
+  "run_at": "2026-10-30T17:27:16+09:00",
   "env": "actions",
   "origin": "ICN",
   "anchor": {
@@ -10,8 +10,8 @@
     "months_ahead": 1,
     "pairs": 36
   },
-  "page_loads": 26,
-  "elapsed_sec": 232,
+  "page_loads": 14,
+  "elapsed_sec": 119,
   "blocked": false,
   "probes": [
     {
@@ -20,8 +20,8 @@
       "records": 36,
       "saved": 36,
       "mismatches": 0,
-      "probe_days": 27,
-      "best_price": 228300,
+      "probe_days": 28,
+      "best_price": 229600,
       "best_dep": "2026-11-10",
       "best_ret": "2026-11-11",
       "best_nights": 1,
@@ -35,11 +35,11 @@
       "records": 36,
       "saved": 36,
       "mismatches": 0,
-      "probe_days": 26,
-      "best_price": 477800,
+      "probe_days": 27,
+      "best_price": 485572,
       "best_dep": "2026-11-10",
-      "best_ret": "2026-11-11",
-      "best_nights": 1,
+      "best_ret": "2026-11-12",
+      "best_nights": 2,
       "source_tag": "최저가",
       "candidate_label": "NORMAL",
       "candidate_reason": "평소 수준"
@@ -50,14 +50,14 @@
       "records": 36,
       "saved": 36,
       "mismatches": 0,
-      "probe_days": 25,
-      "best_price": 246700,
+      "probe_days": 26,
+      "best_price": 228300,
       "best_dep": "2026-11-10",
       "best_ret": "2026-11-11",
       "best_nights": 1,
       "source_tag": "최저가",
-      "candidate_label": "NORMAL",
-      "candidate_reason": "평소 수준"
+      "candidate_label": "WATCH",
+      "candidate_reason": "약한 신호 (평소보다 7.1% 낮음)"
     },
     {
       "code": "NRT",
@@ -65,8 +65,8 @@
       "records": 36,
       "saved": 36,
       "mismatches": 0,
-      "probe_days": 27,
-      "best_price": 281712,
+      "probe_days": 28,
+      "best_price": 292500,
       "best_dep": "2026-11-10",
       "best_ret": "2026-11-11",
       "best_nights": 1,
@@ -80,14 +80,14 @@
       "records": 36,
       "saved": 36,
       "mismatches": 0,
-      "probe_days": 24,
-      "best_price": 302300,
-      "best_dep": "2026-11-09",
+      "probe_days": 25,
+      "best_price": 314000,
+      "best_dep": "2026-11-10",
       "best_ret": "2026-11-11",
-      "best_nights": 2,
+      "best_nights": 1,
       "source_tag": "저가",
-      "candidate_label": "WATCH",
-      "candidate_reason": "약한 신호 (평소보다 6.4% 낮음)"
+      "candidate_label": "NORMAL",
+      "candidate_reason": "평소 수준"
     },
     {
       "code": "NGO",
@@ -95,14 +95,14 @@
       "records": 36,
       "saved": 36,
       "mismatches": 0,
-      "probe_days": 24,
-      "best_price": 251800,
-      "best_dep": "2026-11-10",
+      "probe_days": 25,
+      "best_price": 282900,
+      "best_dep": "2026-11-11",
       "best_ret": "2026-11-12",
-      "best_nights": 2,
-      "source_tag": "최저가",
-      "candidate_label": "WATCH",
-      "candidate_reason": "약한 신호 (평소보다 13.1% 낮음, 같은 일정 전일 대비 13.5% 하락)"
+      "best_nights": 1,
+      "source_tag": "저가",
+      "candidate_label": "NORMAL",
+      "candidate_reason": "평소 수준"
     },
     {
       "code": "OKA",
@@ -110,8 +110,8 @@
       "records": 36,
       "saved": 36,
       "mismatches": 0,
-      "probe_days": 27,
-      "best_price": 271292,
+      "probe_days": 28,
+      "best_price": 267756,
       "best_dep": "2026-11-10",
       "best_ret": "2026-11-12",
       "best_nights": 2,
@@ -125,94 +125,55 @@
       "records": 36,
       "saved": 36,
       "mismatches": 0,
-      "probe_days": 26,
-      "best_price": 189000,
-      "best_dep": "2026-11-11",
-      "best_ret": "2026-11-12",
+      "probe_days": 27,
+      "best_price": 235100,
+      "best_dep": "2026-11-10",
+      "best_ret": "2026-11-11",
       "best_nights": 1,
       "source_tag": "최저가",
-      "candidate_label": "WATCH",
-      "candidate_reason": "평소 대비 저가 (평소보다 20.4%)"
+      "candidate_label": "NORMAL",
+      "candidate_reason": "평소 수준"
     }
   ],
   "candidates": [
-    "KOJ",
-    "NGO",
-    "CTS"
+    "KIX"
   ],
   "confirmations": [
     {
-      "code": "KOJ",
-      "label": "가고시마(KOJ)",
-      "price": 169000,
-      "dep": "2026-11-17",
-      "ret": "2026-11-18",
+      "code": "KIX",
+      "label": "오사카(KIX)",
+      "price": 228300,
+      "dep": "2026-11-10",
+      "ret": "2026-11-11",
       "nights": 1,
       "final_label": "WATCH",
-      "final_reason": "평소 대비 저가 (평소보다 28.8%) · 다른 날짜 기준 비교",
+      "final_reason": "약한 신호 (평소보다 7.1% 낮음)",
       "final_reasons": [
-        "판정 시점 2026-10-29 17:20: 이 시각 이전 관측 1,590건과 비교 (현재 관측은 비교 대상에서 제외)",
-        "비교 기준: 11월 출발 1박 모든 일정 (이력 26일치, 등급 OK, 관측 출처 probe 1296건, confirm 294건)",
-        "⚠ 비교 대상은 검색한 날짜(11/17→11/18)가 아니라 같은 숙박일수의 다른 날짜 기록입니다. 여행 날짜가 다르므로 참고치로 보세요",
-        "③ 최근 30일 일별 최저 평균 237,362원(11월 출발 1박 모든 일정)보다 28.8% 낮음 (기준 15%)",
-        "① 수집 이후 관측 최저 168,900원 대비 +100원 (2026-10-28 confirm 기준)",
-        "② 동일 일정(11/17→11/18) 이력 2일치 (최소 5일) - 동일 일정 비교 보류",
-        "직전 수집일(2026-10-28) 168,900원과 0.1% 차이: 잡음 범위"
-      ]
-    },
-    {
-      "code": "NGO",
-      "label": "나고야(NGO)",
-      "price": 251800,
-      "dep": "2026-11-03",
-      "ret": "2026-11-04",
-      "nights": 1,
-      "final_label": "WATCH",
-      "final_reason": "신저가 (이전 최저보다 3.7%, 평소 대비 8.3%)",
-      "final_reasons": [
-        "판정 시점 2026-10-29 17:19: 이 시각 이전 관측 2,547건과 비교 (현재 관측은 비교 대상에서 제외)",
-        "비교 기준: 11월 출발 1박 모든 일정 (이력 24일치, 등급 OK, 관측 출처 probe 1224건, confirm 1323건)",
-        "③ 최근 30일 일별 최저 평균 274,610원(11월 출발 1박 모든 일정)보다 8.3% 낮음 (DEAL 기준 15% 미만)",
-        "① 수집 이후 관측 최저 261,600원보다 3.7% 낮음 (2026-10-22 confirm 기준, 11/17→11/18)",
-        "② 동일 일정(11/03→11/04)의 관측 최저 308,300원보다 18.3% 낮음 (6일치) (① 신저가에 포함되는 사실이라 따로 세지 않음)",
-        "직전 수집일(2026-10-22) 336,700원 대비 -84,900원 (25.2% 하락)"
-      ]
-    },
-    {
-      "code": "CTS",
-      "label": "삿포로(CTS)",
-      "price": 299550,
-      "dep": "2026-10-30",
-      "ret": "2026-11-04",
-      "nights": 5,
-      "final_label": "WATCH",
-      "final_reason": "약한 신호 (평소보다 8.7% 낮음)",
-      "final_reasons": [
-        "판정 시점 2026-10-29 17:19: 이 시각 이전 관측 3,576건과 비교 (현재 관측은 비교 대상에서 제외)",
-        "비교 기준: 10월 출발 5박 모든 일정 (이력 22일치, 등급 OK, 관측 출처 probe 1224건, confirm 2352건)",
-        "③ 최근 30일 일별 최저 평균 328,243원(10월 출발 5박 모든 일정)보다 8.7% 낮음 (DEAL 기준 15% 미만)",
-        "① 수집 이후 관측 최저 295,297원 대비 +4,253원 (2026-10-28 confirm 기준)",
-        "② 동일 일정(10/30→11/04) 관측 최저 295,297원 대비 +4,253원",
-        "직전 수집일(2026-10-28) 295,297원과 1.4% 차이: 잡음 범위"
+        "판정 시점 2026-10-30 17:27: 이 시각 이전 관측 8,119건과 비교 (현재 관측은 비교 대상에서 제외)",
+        "비교 기준: 11월 출발 1박 모든 일정 (이력 26일치, 등급 OK, 관측 출처 tracker 5941건, probe 1296건, confirm 882건)",
+        "③ 최근 30일 일별 최저 평균 245,847원(11월 출발 1박 모든 일정)보다 7.1% 낮음 (DEAL 기준 15% 미만)",
+        "① 수집 이후 관측 최저 205,900원 대비 +22,400원 (2026-10-01 confirm 기준, 11/18→11/19)",
+        "② 동일 일정(11/10→11/11) 관측 최저 208,400원 대비 +19,900원",
+        "직전 수집일(2026-10-29) 대비 -18,400원 (7.5% 하락, 기준 10% 미만)"
       ]
     }
   ],
   "tracker_comparison": {
     "FUK": {
-      "tracker_rows_today": 3,
-      "tracker_full_min": 385220,
+      "tracker_rows_today": 1,
+      "tracker_full_min": 575131,
+      "tracker_window_min": null,
+      "probe_min": 229600,
+      "pairs_in_window": 0,
+      "missed_pct": -60.08
+    },
+    "KIX": {
+      "tracker_rows_today": 1,
+      "tracker_full_min": 547140,
       "tracker_window_min": null,
       "probe_min": 228300,
       "pairs_in_window": 0,
-      "missed_pct": -40.74
-    },
-    "KIX": {
-      "tracker_rows_today": 3,
-      "tracker_full_min": 431439,
-      "tracker_window_min": null,
-      "probe_min": 246700,
-      "pairs_in_window": 0,
-      "missed_pct": -42.82
+      "missed_pct": -58.27
     }
   },
   "preroll": {
@@ -307,7 +268,7 @@
         "nights_counts": "1:5|2:6|3:7|4:6|5:5|6:4|7:3"
       }
     ],
-    "elapsed_sec": 72,
+    "elapsed_sec": 69,
     "all_complete": true
   }
 }
