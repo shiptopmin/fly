@@ -1,63 +1,9 @@
 {
   "source": "google_flights",
-  "run_started_at": "2026-10-31T14:33:40+09:00",
-  "run_finished_at": "2026-10-31T14:36:40+09:00",
+  "run_started_at": "2026-11-01T14:56:36+09:00",
+  "run_finished_at": "2026-11-01T15:01:53+09:00",
   "headless": true,
   "routes": [
-    {
-      "route": "ICN-KIX",
-      "origin": "ICN",
-      "destination": "KIX",
-      "target_month": "2026-10",
-      "nights_range": [
-        1,
-        7
-      ],
-      "started_at": "2026-10-31T14:33:40+09:00",
-      "finished_at": "2026-10-31T14:33:40+09:00",
-      "records_collected": 0,
-      "records_added_to_csv": 0,
-      "duplicates_skipped": 0,
-      "missing_pairs": [],
-      "price_semantics": "",
-      "semantics_verified": false,
-      "blocked": false,
-      "errors": [],
-      "page_loads": 0,
-      "semantics_checks": 0,
-      "semantics_mismatches": 0,
-      "price_mismatches": 0,
-      "history_file": "data/history/ICN-KIX.csv",
-      "skipped": "남은 출발일 없음",
-      "total_rows_in_csv": 5941
-    },
-    {
-      "route": "ICN-FUK",
-      "origin": "ICN",
-      "destination": "FUK",
-      "target_month": "2026-10",
-      "nights_range": [
-        1,
-        7
-      ],
-      "started_at": "2026-10-31T14:33:42+09:00",
-      "finished_at": "2026-10-31T14:33:42+09:00",
-      "records_collected": 0,
-      "records_added_to_csv": 0,
-      "duplicates_skipped": 0,
-      "missing_pairs": [],
-      "price_semantics": "",
-      "semantics_verified": false,
-      "blocked": false,
-      "errors": [],
-      "page_loads": 0,
-      "semantics_checks": 0,
-      "semantics_mismatches": 0,
-      "price_mismatches": 0,
-      "history_file": "data/history/ICN-FUK.csv",
-      "skipped": "남은 출발일 없음",
-      "total_rows_in_csv": 5093
-    },
     {
       "route": "ICN-KIX-2026-11",
       "origin": "ICN",
@@ -67,8 +13,8 @@
         1,
         7
       ],
-      "started_at": "2026-10-31T14:33:44+09:00",
-      "finished_at": "2026-10-31T14:35:06+09:00",
+      "started_at": "2026-11-01T14:56:36+09:00",
+      "finished_at": "2026-11-01T14:57:56+09:00",
       "records_collected": 182,
       "records_added_to_csv": 182,
       "duplicates_skipped": 0,
@@ -82,7 +28,7 @@
       "semantics_mismatches": 0,
       "price_mismatches": 0,
       "history_file": "data/history/ICN-KIX-2026-11.csv",
-      "total_rows_in_csv": 3108
+      "total_rows_in_csv": 3290
     },
     {
       "route": "ICN-FUK-2026-11",
@@ -93,27 +39,74 @@
         1,
         7
       ],
-      "started_at": "2026-10-31T14:35:08+09:00",
-      "finished_at": "2026-10-31T14:36:40+09:00",
-      "records_collected": 181,
-      "records_added_to_csv": 181,
+      "started_at": "2026-11-01T14:57:58+09:00",
+      "finished_at": "2026-11-01T14:59:13+09:00",
+      "records_collected": 182,
+      "records_added_to_csv": 182,
       "duplicates_skipped": 0,
-      "missing_pairs": [
-        "2026-11-29->2026-11-30"
-      ],
-      "price_semantics": "Google Flights 날짜 표 셀 가격 = 해당 출발일/귀국일 조합의 왕복 총액 (성인 1명, 필수 세금·수수료 포함, 검색 결과 중 최저가) [교차검증 8/9 페이지 성공]",
-      "semantics_verified": false,
+      "missing_pairs": [],
+      "price_semantics": "Google Flights 날짜 표 셀 가격 = 해당 출발일/귀국일 조합의 왕복 총액 (성인 1명, 필수 세금·수수료 포함, 검색 결과 중 최저가) [교차검증 9/9 페이지 성공]",
+      "semantics_verified": true,
       "blocked": false,
-      "errors": [
-        "Grid cells did not stabilize within 15s (anchor=2026-12-02~2026-12-03); using last read (가격이 갱신되는 중이었을 수 있음)",
-        "Semantics cross-check mismatch (재확인 1회 후에도 불일치): anchor=2026-12-02~2026-12-03, 선택 표시 셀 없음, 목록최저=236,800원, 원인=no_selected_cell"
-      ],
+      "errors": [],
       "page_loads": 9,
       "semantics_checks": 9,
-      "semantics_mismatches": 1,
+      "semantics_mismatches": 0,
       "price_mismatches": 0,
       "history_file": "data/history/ICN-FUK-2026-11.csv",
-      "total_rows_in_csv": 3372
+      "total_rows_in_csv": 3554
+    },
+    {
+      "route": "ICN-KIX-2026-12",
+      "origin": "ICN",
+      "destination": "KIX",
+      "target_month": "2026-12",
+      "nights_range": [
+        1,
+        7
+      ],
+      "started_at": "2026-11-01T14:59:15+09:00",
+      "finished_at": "2026-11-01T15:00:36+09:00",
+      "records_collected": 189,
+      "records_added_to_csv": 189,
+      "duplicates_skipped": 0,
+      "missing_pairs": [],
+      "price_semantics": "Google Flights 날짜 표 셀 가격 = 해당 출발일/귀국일 조합의 왕복 총액 (성인 1명, 필수 세금·수수료 포함, 검색 결과 중 최저가) [교차검증 9/9 페이지 성공]",
+      "semantics_verified": true,
+      "blocked": false,
+      "errors": [],
+      "page_loads": 9,
+      "semantics_checks": 9,
+      "semantics_mismatches": 0,
+      "price_mismatches": 0,
+      "history_file": "data/history/ICN-KIX-2026-12.csv",
+      "total_rows_in_csv": 189
+    },
+    {
+      "route": "ICN-FUK-2026-12",
+      "origin": "ICN",
+      "destination": "FUK",
+      "target_month": "2026-12",
+      "nights_range": [
+        1,
+        7
+      ],
+      "started_at": "2026-11-01T15:00:38+09:00",
+      "finished_at": "2026-11-01T15:01:53+09:00",
+      "records_collected": 189,
+      "records_added_to_csv": 189,
+      "duplicates_skipped": 0,
+      "missing_pairs": [],
+      "price_semantics": "Google Flights 날짜 표 셀 가격 = 해당 출발일/귀국일 조합의 왕복 총액 (성인 1명, 필수 세금·수수료 포함, 검색 결과 중 최저가) [교차검증 9/9 페이지 성공]",
+      "semantics_verified": true,
+      "blocked": false,
+      "errors": [],
+      "page_loads": 9,
+      "semantics_checks": 9,
+      "semantics_mismatches": 0,
+      "price_mismatches": 0,
+      "history_file": "data/history/ICN-FUK-2026-12.csv",
+      "total_rows_in_csv": 189
     }
   ]
 }
