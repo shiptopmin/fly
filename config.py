@@ -96,6 +96,11 @@ SEARCH_DIR = "data/searches"            # 동적 검색(search.py) 결과 저장
 # 가격 의미 검증 기록(진단용, append-only). 가격 보정은 하지 않고 불일치 사실만 누적합니다.
 SEMANTICS_LOG = "data/diagnostics/semantics_checks.csv"
 
+# --- Probe 수집 진단 기록 (A단계: 이미 확보된 오류 문구·로드 수·저장/누락 행 수·차단 여부·소요 시간을 별도 JSONL 에 기록) ---
+# 기본 꺼짐. 켜도 기존 CSV / Probe 요약 JSON / last_run.json / semantics_checks.csv 는 바꾸지 않고 아래 폴더에만 추가합니다.
+PROBE_TRACE_DIR = "data/diagnostics/probe_trace"
+PROBE_DIAGNOSTICS = {"enabled": False, "retention_days": 120, "max_file_kb": 2048, "max_errors": 20, "max_chars": 400}
+
 # --- 사이트 부하 최소화 ---
 # 페이지를 연속으로 열 때 사이에 두는 대기 시간(초). 봇 탐지 우회 목적이 아니라
 # 같은 사이트에 너무 빠르게 반복 요청하지 않기 위한 값입니다.

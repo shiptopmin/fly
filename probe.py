@@ -37,6 +37,7 @@ import time
 from datetime import date, datetime, timedelta, timezone
 
 import config
+import probe_diag
 import storage
 from analyzer import deals
 from analyzer.combinations import Trip, includes_weekend, load_rows
@@ -270,6 +271,7 @@ def run_preroll(collector, airports, origin, today, now_iso, env, headless=True,
             say(f"  사전 측정 {a.label:<12} 오늘 정상 완료분이 있어 건너뜀")
             continue
         sleep(config.PAGE_LOAD_DELAY_SEC)
+        t_dest = time.time()
         res = collector.collect_query(probe_query(origin, a.code, dep, ret), headless=headless)
         out["page_loads"] += res.page_loads
         path = preroll_file(origin, a.code)
@@ -296,6 +298,9 @@ def run_preroll(collector, airports, origin, today, now_iso, env, headless=True,
         item.update(status="complete" if complete else "incomplete", records=len(res.records),
                     saved=added, mismatches=mism, errors=len(res.errors), problems=problems,
                     nights_counts=_fmt_counts(counts))
+        probe_diag.record_destination(config, context="preroll", origin=origin, dest=a.code, run_date=today, run_at=now_iso,
+                                      env=env, anchor=(dep, ret), res=res, saved=added,
+                                      elapsed_sec=time.time() - t_dest)
         append_preroll_status({
             "date": today.isoformat(), "run_at": now_iso, "origin": origin, "destination": a.code,
             "anchor_dep": dep.isoformat(), "anchor_ret": ret.isoformat(), "collected_at": stamp,
@@ -418,6 +423,10 @@ def main():
               + f"  (저장 {added}건, 검증 불일치 {len(mism)}건, {time.time() - t0:.0f}초)")
         for e in res.errors:
             print(f"        ! {e}")
+        # 진단 기록 (기본 꺼짐; 켜져 있어도 수집 결과는 읽기만 하고, 실패해도 예외를 내보내지 않음)
+        probe_diag.record_destination(config, context="probe", origin=origin, dest=a.code, run_date=today, run_at=now_iso,
+                                      env=env, anchor=(anchor_dep, anchor_ret), res=res, saved=added,
+                                      elapsed_sec=time.time() - t0, best=best)
         probes.append({"airport": a, "result": res, "trips": trips, "best": best,
                        "saved": added, "mismatches": len(mism)})
         if res.blocked:
@@ -464,6 +473,9 @@ def main():
             outcome = run_search(base, [a], headless=not args.debug)
             total_loads += outcome.page_loads
             for airport, res in outcome.collected:
+                probe_diag.record_destination(config, context="confirm", origin=origin, dest=airport.code, run_date=today,
+                                              run_at=now_iso, env=env, anchor=(d1, d2), res=res, saved=None,
+                                              elapsed_sec=time.time() - t0)
                 storage.append_semantics_checks(config.SEMANTICS_LOG, res.semantics_checks,
                                                 origin, airport.code, now_iso, env, context="confirm")
                 if res.records:

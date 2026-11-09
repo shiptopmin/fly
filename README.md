@@ -95,6 +95,15 @@ Probe 의 기준 창은 매달 1일에 다음 달로 넘어갑니다. 새 창의
 
 테스트: `python -m unittest discover -s tests -t .`
 
+### Probe 수집 진단 기록 (선택, 기본 꺼짐)
+
+본 Probe 가 목적지에서 "저장 0건" 같은 실패를 했을 때, 수집기가 돌려준 **오류 문구 전문**이 지금은 Actions 화면 출력에만 남습니다.
+`config.PROBE_DIAGNOSTICS["enabled"] = True` 로 켜면(별도 승인 후) 같은 정보를 `data/diagnostics/probe_trace/YYYY-MM.jsonl` 에 한 줄씩 추가합니다.
+
+- 한 줄 = 한 번의 (실행, 맥락, 목적지): 날짜, 실행번호(`GITHUB_RUN_ID`), 맥락(probe/preroll/confirm), 페이지 로드 수, 저장 행 수, 누락 조합 수, 차단 여부, 목적지별 소요 시간, 오류 문구 전문과 실패 코드(`NO_GRID_BUTTON` 등)
+- 기존 CSV, Probe 요약 JSON(`data/probes/feed`), `data/last_run.json`, `semantics_checks.csv` 는 바꾸지 않습니다. 기록이 실패해도 수집은 그대로 진행됩니다.
+- 월별 파일, 파일당 상한(기본 2 MB), 120일이 지난 월 파일 자동 정리. 스크린샷·페이지 내용 수집은 이 단계에 없습니다.
+
 ## 웹에서 검색하기 (로컬)
 
 ```bash
