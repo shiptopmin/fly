@@ -1,0 +1,162 @@
+{
+  "date": "2026-11-11",
+  "run_at": "2026-11-11T18:10:49+09:00",
+  "env": "actions",
+  "origin": "ICN",
+  "anchor": {
+    "dep": "2026-12-08",
+    "ret": "2026-12-11",
+    "nights": 3,
+    "months_ahead": 1,
+    "pairs": 36
+  },
+  "page_loads": 14,
+  "elapsed_sec": 288,
+  "blocked": false,
+  "probes": [
+    {
+      "code": "FUK",
+      "label": "후쿠오카(FUK)",
+      "records": 0,
+      "saved": 0,
+      "mismatches": 1,
+      "probe_days": null,
+      "best_price": null,
+      "best_dep": null,
+      "best_ret": null,
+      "best_nights": null,
+      "source_tag": "",
+      "candidate_label": null,
+      "candidate_reason": null
+    },
+    {
+      "code": "HND",
+      "label": "도쿄(HND)",
+      "records": 0,
+      "saved": 0,
+      "mismatches": 0,
+      "probe_days": null,
+      "best_price": null,
+      "best_dep": null,
+      "best_ret": null,
+      "best_nights": null,
+      "source_tag": "",
+      "candidate_label": null,
+      "candidate_reason": null
+    },
+    {
+      "code": "KIX",
+      "label": "오사카(KIX)",
+      "records": 36,
+      "saved": 36,
+      "mismatches": 0,
+      "probe_days": 16,
+      "best_price": 229500,
+      "best_dep": "2026-12-09",
+      "best_ret": "2026-12-10",
+      "best_nights": 1,
+      "source_tag": "최저가",
+      "candidate_label": "NORMAL",
+      "candidate_reason": "평소 수준"
+    },
+    {
+      "code": "NRT",
+      "label": "도쿄(NRT)",
+      "records": 36,
+      "saved": 36,
+      "mismatches": 0,
+      "probe_days": 17,
+      "best_price": 282884,
+      "best_dep": "2026-12-09",
+      "best_ret": "2026-12-10",
+      "best_nights": 1,
+      "source_tag": "최저가",
+      "candidate_label": "NORMAL",
+      "candidate_reason": "평소 수준"
+    },
+    {
+      "code": "CTS",
+      "label": "삿포로(CTS)",
+      "records": 0,
+      "saved": 0,
+      "mismatches": 1,
+      "probe_days": null,
+      "best_price": null,
+      "best_dep": null,
+      "best_ret": null,
+      "best_nights": null,
+      "source_tag": "",
+      "candidate_label": null,
+      "candidate_reason": null
+    },
+    {
+      "code": "NGO",
+      "label": "나고야(NGO)",
+      "records": 36,
+      "saved": 36,
+      "mismatches": 0,
+      "probe_days": 15,
+      "best_price": 264900,
+      "best_dep": "2026-12-07",
+      "best_ret": "2026-12-09",
+      "best_nights": 2,
+      "source_tag": "저가",
+      "candidate_label": "WATCH",
+      "candidate_reason": "약한 신호 (같은 일정 전일 대비 15.9% 하락)"
+    },
+    {
+      "code": "OKA",
+      "label": "오키나와(OKA)",
+      "records": 36,
+      "saved": 36,
+      "mismatches": 0,
+      "probe_days": 18,
+      "best_price": 281183,
+      "best_dep": "2026-12-09",
+      "best_ret": "2026-12-10",
+      "best_nights": 1,
+      "source_tag": "최저가",
+      "candidate_label": "NORMAL",
+      "candidate_reason": "평소 수준"
+    },
+    {
+      "code": "KOJ",
+      "label": "가고시마(KOJ)",
+      "records": 0,
+      "saved": 0,
+      "mismatches": 0,
+      "probe_days": null,
+      "best_price": null,
+      "best_dep": null,
+      "best_ret": null,
+      "best_nights": null,
+      "source_tag": "",
+      "candidate_label": null,
+      "candidate_reason": null
+    }
+  ],
+  "candidates": [
+    "NGO"
+  ],
+  "confirmations": [
+    {
+      "code": "NGO",
+      "label": "나고야(NGO)",
+      "price": 264900,
+      "dep": "2026-12-07",
+      "ret": "2026-12-09",
+      "nights": 2,
+      "final_label": "WATCH",
+      "final_reason": "약한 신호 (같은 일정 전일 대비 15.9% 하락)",
+      "final_reasons": [
+        "판정 시점 2026-11-11 18:12: 이 시각 이전 관측 3,342건과 비교 (현재 관측은 비교 대상에서 제외)",
+        "비교 기준: 12월 출발 2박 모든 일정 (이력 15일치, 등급 OK, 관측 출처 probe 1512건, confirm 1470건, preroll 360건)",
+        "③ 최근 30일 일별 최저 평균 258,453원(12월 출발 2박 모든 일정)과 2.5% 차이: 잡음 범위(±3%), 변화로 보지 않음",
+        "① 수집 이후 관측 최저 242,000원 대비 +22,900원 (2026-10-23 preroll 기준, 12/08→12/10)",
+        "② 동일 일정(12/07→12/09) 관측 최저 242,300원 대비 +22,600원",
+        "직전 수집일(2026-11-10) 315,000원 대비 -50,100원 (15.9% 하락)"
+      ]
+    }
+  ],
+  "tracker_comparison": {}
+}

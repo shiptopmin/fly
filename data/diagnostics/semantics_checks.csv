@@ -2066,3 +2066,14 @@
 2026-11-11T15:11:22+09:00,actions,tracker,ICN,FUK,2026-12-11,2026-12-19,True,,2026-12-11,2026-12-19,424100,424100,0,0.0,,1,False,False
 2026-11-11T15:11:22+09:00,actions,tracker,ICN,FUK,2026-12-18,2026-12-19,True,,2026-12-18,2026-12-19,439100,439100,0,0.0,,1,False,False
 2026-11-11T15:11:22+09:00,actions,tracker,ICN,FUK,2026-12-25,2026-12-26,False,no_selected_cell,,,,454100,,,,0,True,False
+2026-11-11T18:10:49+09:00,actions,probe,ICN,FUK,2026-12-08,2026-12-11,False,no_selected_cell,,,,273500,,,,0,True,False
+2026-11-11T18:10:49+09:00,actions,probe,ICN,KIX,2026-12-08,2026-12-11,True,,2026-12-08,2026-12-11,261500,261500,0,0.0,,1,False,False
+2026-11-11T18:10:49+09:00,actions,probe,ICN,NRT,2026-12-08,2026-12-11,True,,2026-12-08,2026-12-11,317008,317008,0,0.0,,1,False,False
+2026-11-11T18:10:49+09:00,actions,probe,ICN,CTS,2026-12-08,2026-12-11,False,no_selected_cell,,,,396800,,,,0,True,False
+2026-11-11T18:10:49+09:00,actions,probe,ICN,NGO,2026-12-08,2026-12-11,True,,2026-12-08,2026-12-11,288050,288050,0,0.0,저가,1,False,False
+2026-11-11T18:10:49+09:00,actions,probe,ICN,OKA,2026-12-08,2026-12-11,True,,2026-12-08,2026-12-11,335803,335803,0,0.0,저가,1,False,False
+2026-11-11T18:10:49+09:00,actions,confirm,ICN,NGO,2026-11-30,2026-12-01,False,no_selected_cell,,,,336200,,,,0,True,False
+2026-11-11T18:10:49+09:00,actions,confirm,ICN,NGO,2026-12-07,2026-12-08,True,,2026-12-07,2026-12-08,274900,274900,0,0.0,저가,1,False,False
+2026-11-11T18:10:49+09:00,actions,confirm,ICN,NGO,2026-12-07,2026-12-15,False,no_selected_cell,,,,274900,,,,0,True,False
+2026-11-11T18:10:49+09:00,actions,confirm,ICN,NGO,2026-12-14,2026-12-15,False,no_selected_cell,,,,325500,,,,0,True,False
+2026-11-11T18:10:49+09:00,actions,confirm,ICN,NGO,2026-12-14,2026-12-22,False,no_selected_cell,,,,334900,,,,0,True,False
