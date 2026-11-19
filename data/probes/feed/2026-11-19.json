@@ -1,0 +1,51 @@
+{
+  "date": "2026-11-19",
+  "run_at": "2026-11-19T19:10:31+09:00",
+  "env": "actions",
+  "origin": "ICN",
+  "anchor": {
+    "dep": "2026-12-08",
+    "ret": "2026-12-11",
+    "nights": 3,
+    "months_ahead": 1,
+    "pairs": 36
+  },
+  "page_loads": 2,
+  "elapsed_sec": 37,
+  "blocked": true,
+  "probes": [
+    {
+      "code": "FUK",
+      "label": "후쿠오카(FUK)",
+      "records": 0,
+      "saved": 0,
+      "mismatches": 0,
+      "probe_days": null,
+      "best_price": null,
+      "best_dep": null,
+      "best_ret": null,
+      "best_nights": null,
+      "source_tag": "",
+      "candidate_label": null,
+      "candidate_reason": null
+    },
+    {
+      "code": "HND",
+      "label": "도쿄(HND)",
+      "records": 0,
+      "saved": 0,
+      "mismatches": 0,
+      "probe_days": null,
+      "best_price": null,
+      "best_dep": null,
+      "best_ret": null,
+      "best_nights": null,
+      "source_tag": "",
+      "candidate_label": null,
+      "candidate_reason": null
+    }
+  ],
+  "candidates": [],
+  "confirmations": [],
+  "tracker_comparison": {}
+}
