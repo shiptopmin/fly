@@ -1,0 +1,268 @@
+{
+  "date": "2026-11-22",
+  "run_at": "2026-11-22T18:37:02+09:00",
+  "env": "actions",
+  "origin": "ICN",
+  "anchor": {
+    "dep": "2026-12-08",
+    "ret": "2026-12-11",
+    "nights": 3,
+    "months_ahead": 1,
+    "pairs": 36
+  },
+  "page_loads": 8,
+  "elapsed_sec": 264,
+  "blocked": false,
+  "probes": [
+    {
+      "code": "FUK",
+      "label": "후쿠오카(FUK)",
+      "records": 0,
+      "saved": 0,
+      "mismatches": 0,
+      "probe_days": null,
+      "best_price": null,
+      "best_dep": null,
+      "best_ret": null,
+      "best_nights": null,
+      "source_tag": "",
+      "candidate_label": null,
+      "candidate_reason": null
+    },
+    {
+      "code": "HND",
+      "label": "도쿄(HND)",
+      "records": 0,
+      "saved": 0,
+      "mismatches": 0,
+      "probe_days": null,
+      "best_price": null,
+      "best_dep": null,
+      "best_ret": null,
+      "best_nights": null,
+      "source_tag": "",
+      "candidate_label": null,
+      "candidate_reason": null
+    },
+    {
+      "code": "KIX",
+      "label": "오사카(KIX)",
+      "records": 0,
+      "saved": 0,
+      "mismatches": 0,
+      "probe_days": null,
+      "best_price": null,
+      "best_dep": null,
+      "best_ret": null,
+      "best_nights": null,
+      "source_tag": "",
+      "candidate_label": null,
+      "candidate_reason": null
+    },
+    {
+      "code": "NRT",
+      "label": "도쿄(NRT)",
+      "records": 0,
+      "saved": 0,
+      "mismatches": 0,
+      "probe_days": null,
+      "best_price": null,
+      "best_dep": null,
+      "best_ret": null,
+      "best_nights": null,
+      "source_tag": "",
+      "candidate_label": null,
+      "candidate_reason": null
+    },
+    {
+      "code": "CTS",
+      "label": "삿포로(CTS)",
+      "records": 0,
+      "saved": 0,
+      "mismatches": 0,
+      "probe_days": null,
+      "best_price": null,
+      "best_dep": null,
+      "best_ret": null,
+      "best_nights": null,
+      "source_tag": "",
+      "candidate_label": null,
+      "candidate_reason": null
+    },
+    {
+      "code": "NGO",
+      "label": "나고야(NGO)",
+      "records": 0,
+      "saved": 0,
+      "mismatches": 0,
+      "probe_days": null,
+      "best_price": null,
+      "best_dep": null,
+      "best_ret": null,
+      "best_nights": null,
+      "source_tag": "",
+      "candidate_label": null,
+      "candidate_reason": null
+    },
+    {
+      "code": "OKA",
+      "label": "오키나와(OKA)",
+      "records": 0,
+      "saved": 0,
+      "mismatches": 0,
+      "probe_days": null,
+      "best_price": null,
+      "best_dep": null,
+      "best_ret": null,
+      "best_nights": null,
+      "source_tag": "",
+      "candidate_label": null,
+      "candidate_reason": null
+    },
+    {
+      "code": "KOJ",
+      "label": "가고시마(KOJ)",
+      "records": 0,
+      "saved": 0,
+      "mismatches": 0,
+      "probe_days": null,
+      "best_price": null,
+      "best_dep": null,
+      "best_ret": null,
+      "best_nights": null,
+      "source_tag": "",
+      "candidate_label": null,
+      "candidate_reason": null
+    }
+  ],
+  "candidates": [],
+  "confirmations": [],
+  "tracker_comparison": {},
+  "preroll": {
+    "active": true,
+    "anchor": {
+      "dep": "2027-01-12",
+      "ret": "2027-01-15",
+      "pairs": 36,
+      "months_ahead": 2
+    },
+    "page_loads": 8,
+    "blocked": false,
+    "destinations": [
+      {
+        "code": "FUK",
+        "status": "incomplete",
+        "records": 0,
+        "saved": 0,
+        "mismatches": 0,
+        "errors": 1,
+        "problems": [
+          "저장된 행 없음",
+          "수집 오류 1건: '날짜 표' button not found for 2027-01-12~2027-01-15",
+          "가격 의미 교차검증 미완료"
+        ],
+        "nights_counts": ""
+      },
+      {
+        "code": "HND",
+        "status": "incomplete",
+        "records": 0,
+        "saved": 0,
+        "mismatches": 0,
+        "errors": 1,
+        "problems": [
+          "저장된 행 없음",
+          "수집 오류 1건: '날짜 표' button not found for 2027-01-12~2027-01-15",
+          "가격 의미 교차검증 미완료"
+        ],
+        "nights_counts": ""
+      },
+      {
+        "code": "KIX",
+        "status": "incomplete",
+        "records": 0,
+        "saved": 0,
+        "mismatches": 0,
+        "errors": 1,
+        "problems": [
+          "저장된 행 없음",
+          "수집 오류 1건: '날짜 표' button not found for 2027-01-12~2027-01-15",
+          "가격 의미 교차검증 미완료"
+        ],
+        "nights_counts": ""
+      },
+      {
+        "code": "NRT",
+        "status": "incomplete",
+        "records": 0,
+        "saved": 0,
+        "mismatches": 0,
+        "errors": 1,
+        "problems": [
+          "저장된 행 없음",
+          "수집 오류 1건: '날짜 표' button not found for 2027-01-12~2027-01-15",
+          "가격 의미 교차검증 미완료"
+        ],
+        "nights_counts": ""
+      },
+      {
+        "code": "CTS",
+        "status": "incomplete",
+        "records": 0,
+        "saved": 0,
+        "mismatches": 0,
+        "errors": 1,
+        "problems": [
+          "저장된 행 없음",
+          "수집 오류 1건: '날짜 표' button not found for 2027-01-12~2027-01-15",
+          "가격 의미 교차검증 미완료"
+        ],
+        "nights_counts": ""
+      },
+      {
+        "code": "NGO",
+        "status": "incomplete",
+        "records": 0,
+        "saved": 0,
+        "mismatches": 0,
+        "errors": 1,
+        "problems": [
+          "저장된 행 없음",
+          "수집 오류 1건: '날짜 표' button not found for 2027-01-12~2027-01-15",
+          "가격 의미 교차검증 미완료"
+        ],
+        "nights_counts": ""
+      },
+      {
+        "code": "OKA",
+        "status": "incomplete",
+        "records": 0,
+        "saved": 0,
+        "mismatches": 0,
+        "errors": 1,
+        "problems": [
+          "저장된 행 없음",
+          "수집 오류 1건: '날짜 표' button not found for 2027-01-12~2027-01-15",
+          "가격 의미 교차검증 미완료"
+        ],
+        "nights_counts": ""
+      },
+      {
+        "code": "KOJ",
+        "status": "incomplete",
+        "records": 0,
+        "saved": 0,
+        "mismatches": 0,
+        "errors": 1,
+        "problems": [
+          "저장된 행 없음",
+          "수집 오류 1건: '날짜 표' button not found for 2027-01-12~2027-01-15",
+          "가격 의미 교차검증 미완료"
+        ],
+        "nights_counts": ""
+      }
+    ],
+    "elapsed_sec": 265,
+    "all_complete": false
+  }
+}
