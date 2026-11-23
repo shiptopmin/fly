@@ -28,7 +28,7 @@ from collectors.google_flights import GoogleFlightsCollector
 
 KST = probe.KST
 PATH_KEYS = ["HISTORY_DIR", "PROBE_DIR", "PROBE_FEED_DIR", "PROBE_PREROLL_DIR", "PROBE_PREROLL_STATUS",
-             "SEMANTICS_LOG", "PROBE_PREROLL_DAYS", "PAGE_LOAD_DELAY_SEC"]
+             "SEMANTICS_LOG", "PROBE_PREROLL_DAYS", "PAGE_LOAD_DELAY_SEC", "PROBE_DIAGNOSTICS"]
 
 
 class Clock:
@@ -88,6 +88,7 @@ class TempEnv(unittest.TestCase):
         config.PROBE_PREROLL_DIR = os.path.join(t, "probes", "preroll")
         config.PROBE_PREROLL_STATUS = os.path.join(t, "probes", "preroll", "status.csv")
         config.SEMANTICS_LOG = os.path.join(t, "diag", "semantics.csv")
+        config.PROBE_DIAGNOSTICS = {**config.PROBE_DIAGNOSTICS, "enabled": False}   # 이 시험들은 진단 끔 기준 (진단 시험은 test_probe_diag.py)
         config.PROBE_PREROLL_DAYS = 8
         config.PAGE_LOAD_DELAY_SEC = 0
         self._dt, self._gfc = probe.datetime, probe.GoogleFlightsCollector
