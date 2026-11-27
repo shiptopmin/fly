@@ -70,6 +70,10 @@ class GoogleFlightsCollector(BaseCollector):
         """트래커용(월 단위). 조건을 SearchQuery 로 감싸서 collect_query 에 넘깁니다."""
         query = SearchQuery.for_month(origin, destination, year, month,
                                       min_nights, max_nights, allow_next_month_return)
+        # 지난 출발일은 날짜 표에 가격이 없으므로 검색 계획에서 뺍니다. (오늘 출발은 대상에 포함)
+        query.depart_from = max(query.depart_from, datetime.now(KST).date())
+        if query.depart_from > query.depart_to:      # 남은 출발일이 없는 달: 접속하지 않음
+            return CollectResult()
         return self.collect_query(query, headless)
 
     def collect_query(self, query: SearchQuery, headless) -> CollectResult:
