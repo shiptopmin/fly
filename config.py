@@ -24,9 +24,9 @@ LEGACY_SLUGS = {
     ("ICN", "KIX", 2026, 10): "ICN-KIX",
     ("ICN", "FUK", 2026, 10): "ICN-FUK",
 }
-# 화면(홈/상세 페이지)에 공개할 마지막 달. 이 달 이후는 수집만 하고 판정 규칙 검증이 끝날 때까지 숨깁니다.
-# 검증이 끝나면 올리거나(예: (2026, 11)) None 으로 바꿉니다 (None = 모두 공개).
-PUBLIC_THROUGH = (2026, 10)
+# 상세 페이지에 공개할 마지막 달. None = 모두 공개. (특정 달까지만 보이려면 (2026, 11) 처럼 적습니다)
+# 월 단위로 숨기지 않고, 화면에서 마지막 확인 시점을 표시합니다. 기존 판정은 '검증 전'으로 표시합니다.
+PUBLIC_THROUGH = None
 
 # --- 숙박일수 기본 범위 (노선에 따로 적지 않으면 이 값 사용) ---
 MIN_NIGHTS = 1
@@ -95,6 +95,8 @@ DASHBOARD_FILE = "docs/index.html"      # HTML Dashboard (GitHub Pages 가 docs/
 SEARCH_DIR = "data/searches"            # 동적 검색(search.py) 결과 저장 폴더. 트래커 CSV 와 분리
 # 가격 의미 검증 기록(진단용, append-only). 가격 보정은 하지 않고 불일치 사실만 누적합니다.
 SEMANTICS_LOG = "data/diagnostics/semantics_checks.csv"
+# 이상값으로 표시한 수집 실행 목록. 원본 CSV 는 그대로 두고 화면의 추천/최저가/가격 흐름에서만 뺍니다. (판정 엔진 입력은 그대로)
+OUTLIERS_FILE = "data/outliers.csv"
 
 # --- Probe 수집 진단 기록 (A단계: 이미 확보된 오류 문구·로드 수·저장/누락 행 수·차단 여부·소요 시간을 별도 JSONL 에 기록) ---
 # 기본 꺼짐. 켜도 기존 CSV / Probe 요약 JSON / last_run.json / semantics_checks.csv 는 바꾸지 않고 아래 폴더에만 추가합니다.

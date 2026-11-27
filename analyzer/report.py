@@ -13,7 +13,7 @@ analyze.py(터미널 출력)와 build_dashboard.py(HTML)가 같은 숫자를 쓰
 from dataclasses import dataclass, field, replace
 from datetime import date, datetime, timedelta
 
-from . import deals, stats
+from . import deals, outliers, stats
 from .combinations import load_rows, latest_run_rows, build_trips, group_by_nights
 from .history import RouteHistory, thresholds_from_config
 
@@ -45,6 +45,8 @@ class Report:
     observed_low_is_current: bool = False   # 그 최저가가 이번 수집(현재 관측)인지
     verdict: object = None            # 이 페이지의 판정 결과 하나. 상단 상태 문구와 판정 블록이 함께 씁니다
     verdict_trip: object = None       # 판정한 현재 관측 (이번 수집의 최저 조합)
+    flagged: list = field(default_factory=list)        # 이 달 출발의 이상값 표시 행 (화면 계산에서 제외, 판정 입력에는 남음)
+    flagged_prices: set = field(default_factory=set)   # 그 가격 중 정상 관측에는 없는 값 (판정 문장에 표시를 붙일 때 사용)
 
     @property
     def first_day(self) -> date:
@@ -85,8 +87,10 @@ def build_report(route, cfg, sources=None) -> Report | None:
     노선별로 파일이 따로 있지만, 혹시 다른 노선 행이 섞여 있어도 통계에 들어가지 않도록
     출발/도착 공항으로 한 번 더 걸러냅니다. (노선 간 통계 혼합 방지)
     """
+    marked = outliers.load(cfg)
     rows = [r for r in load_rows(route.history_file)
-            if r.get("origin") == route.origin and r.get("destination") == route.destination]
+            if r.get("origin") == route.origin and r.get("destination") == route.destination
+            and not outliers.is_flagged(r, marked)]
     if not rows:
         return None
     latest, latest_rows = latest_run_rows(rows)
@@ -110,9 +114,17 @@ def build_report(route, cfg, sources=None) -> Report | None:
     hist = RouteHistory.from_files(sources, route.origin, route.destination,
                                    today, thresholds_from_config(cfg))
     keep = scope_filter(route, cfg)
-    obs_all = hist.observed_min(keep)
-    obs_30 = hist.observed_min(keep, since=today - timedelta(days=29))
-    obs_90 = hist.observed_min(keep, since=today - timedelta(days=89))
+    # 화면에 보이는 최저가와 그래프는 이상값 표시 행을 뺀 이력으로 계산합니다. 판정(hist)은 바꾸지 않습니다.
+    shown = RouteHistory.from_groups(
+        [(label, [r for r in group if not outliers.is_flagged(r, marked)]) for label, group in hist.groups],
+        route.origin, route.destination, today, thresholds_from_config(cfg))
+    month = f"{route.year:04d}-{route.month:02d}"
+    flagged = [r for r in hist.rows if outliers.is_flagged(r, marked) and r["departure_date"][:7] == month]
+    flagged_prices = {int(r["price"]) for r in flagged} - {int(r["price"]) for r in shown.rows
+                                                           if r["departure_date"][:7] == month}
+    obs_all = shown.observed_min(keep)
+    obs_30 = shown.observed_min(keep, since=today - timedelta(days=29))
+    obs_90 = shown.observed_min(keep, since=today - timedelta(days=89))
     s_all = _with_observed_low(s_all, obs_all)
     s30 = _with_observed_low(s30, obs_30)
     s90 = _with_observed_low(s90, obs_90)
@@ -136,7 +148,9 @@ def build_report(route, cfg, sources=None) -> Report | None:
         top=stats.top_n(trips, cfg.TOP_N),
         best_by_nights=stats.cheapest_by_nights(trips),
         groups=group_by_nights(trips),
-        hist=hist,
+        hist=shown,
+        flagged=flagged,
+        flagged_prices=flagged_prices,
         observed_low_info=obs_all,
         observed_low_is_current=bool(obs_all and obs_all["collected_at"] == latest),
         verdict=verdict,

@@ -246,14 +246,16 @@ class PageTests(TempEnv):
         self.build_pages()
         docs = os.path.dirname(config.DASHBOARD_FILE)
         self.assertEqual(sorted(os.listdir(os.path.join(docs, "routes"))), ["ICN-FUK.html", "ICN-KIX.html"])
-        home = rt(config.DASHBOARD_FILE)
+        old_home = os.path.join(docs, "history.html")          # 이전 첫 화면
+        home = rt(old_home)
         self.assertIn("routes/ICN-KIX.html", home)
         self.assertNotIn("2026-11", home)
         self.assertNotIn("11월", home)
         config.PUBLIC_THROUGH = None
         self.build_pages()
         self.assertEqual(len(os.listdir(os.path.join(docs, "routes"))), 4)
-        self.assertIn("routes/ICN-KIX-2026-11.html", rt(config.DASHBOARD_FILE))
+        self.assertIn("routes/ICN-KIX-2026-11.html", rt(old_home))
+        self.assertIn("routes/ICN-KIX-2026-11.html", rt(config.DASHBOARD_FILE))   # 새 첫 화면에서도 연결
 
     def test_ended_month_stays_on_screen_marked_ended(self):
         self._call_main()
@@ -263,7 +265,7 @@ class PageTests(TempEnv):
         docs = os.path.dirname(config.DASHBOARD_FILE)
         page = rt(os.path.join(docs, "routes", "ICN-KIX.html"))
         self.assertIn("종료된 달", page)
-        self.assertIn("(종료)", rt(config.DASHBOARD_FILE))
+        self.assertIn("(종료)", rt(os.path.join(docs, "history.html")))
 
     def test_route_page_chart_uses_only_its_own_departure_month(self):
         self._call_main()

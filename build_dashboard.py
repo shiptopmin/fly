@@ -9,16 +9,20 @@ build_dashboard.py - 분석 결과로 HTML Dashboard 생성 (Phase 4)
 """
 import html
 import os
+import re
 import sys
 from datetime import datetime, timedelta, timezone
 
+import build_home
 import config
+from analyzer import offers
 from analyzer.report import build_report
 from analyzer import charts, deals, stats
 from routes import load_routes
 
 KST = timezone(timedelta(hours=9))
 MEDALS = ["🥇", "🥈", "🥉", "4", "5"]
+HISTORY_PAGE = "history.html"      # 이전 첫 화면(노선 요약)
 
 
 def esc(s):
@@ -62,8 +66,26 @@ def trip_row(rank, t):
             f"<td>{t.nights}박</td><td class='price'>{won(t.price)}</td><td>{wk} {tag}</td></tr>")
 
 
-LABEL_STYLE = {"DEAL": ("deal", "🟢 좋은 가격"), "WATCH": ("watch", "🟡 지켜볼 만함"),
-               "NORMAL": ("normal", "⚪ 보통"), "HOLD": ("hold", "⚫ 판단 보류")}
+LABEL_STYLE = {"DEAL": ("deal", "🟢 좋은 가격 (검증 전)"), "WATCH": ("watch", "🟡 지켜볼 만함 (검증 전)"),
+               "NORMAL": ("normal", "⚪ 보통 (검증 전)"), "HOLD": ("hold", "⚫ 판단 보류")}
+
+
+def mark_flagged(text, rp):
+    """판정 문장에 나오는 이상값 표시 가격에 [이상값] 을 붙입니다. 판정 자체는 바꾸지 않습니다."""
+    for price in sorted(rp.flagged_prices):
+        text = re.sub(rf"(?<![\d,]){re.escape(won(price))}", f"{won(price)} [이상값]", text)
+    return text
+
+
+def flagged_note(rp):
+    """이상값 표시 행이 있는 달의 상세 페이지에 붙이는 주의 상자."""
+    if not rp.flagged:
+        return ""
+    runs = sorted({fmt_kst(r["collected_at"]) for r in rp.flagged})
+    low = min(int(r["price"]) for r in rp.flagged)
+    return (f'<div class="caution">⚠️ 수집 이상값으로 표시한 관측이 있습니다. 이 달 출발의 저장 행 {len(rp.flagged)}개 '
+            f'({esc(", ".join(runs))} 수집, 가장 낮은 값 {won(low)}). 정상 가격이 아닐 수 있어 최저가 카드와 그래프에서 뺐습니다. '
+            f'기존 판정은 바꾸지 않았으므로 비교 기록에 이 값이 포함될 수 있습니다.</div>')
 
 
 def low_source_note(rp):
@@ -81,10 +103,10 @@ def verdict_block(rp):
     if v is None or t is None:
         return ""
     cls, title = LABEL_STYLE.get(v.label, ("normal", v.label))
-    reasons = "".join(f"<li>{esc(r)}</li>" for r in v.reasons)
+    reasons = "".join(f"<li>{esc(mark_flagged(r, rp))}</li>" for r in v.reasons)
     return (f'<div class="verdict {cls}">'
             f'<div class="vhead">{esc(title)} <span class="muted">'
-            f'{esc(t.period_label)} · {t.nights}박 · {won(t.price)} · {esc(v.detail)}</span></div>'
+            f'{esc(t.period_label)} · {t.nights}박 · {won(t.price)} · {esc(mark_flagged(v.detail, rp))}</span></div>'
             f'<ul class="vreasons">{reasons}</ul></div>')
 
 
@@ -189,6 +211,7 @@ def render(rp, hist, generated_at, ended=False):
   .vhead {{ font-size:1.05rem; font-weight:700; }}
   .vreasons {{ margin:8px 0 0; padding-left:18px; font-size:.9rem; }}
   .vreasons li {{ margin:2px 0; }}
+  .caution {{ margin-top:10px; padding:10px 14px; border:1px solid #d9a400; border-radius:8px; background:rgba(217,164,0,.12); font-size:.9rem; }}
   .chart {{ display:block; max-width:100%; }}
   .chart-caption {{ font-size:.8rem; margin-top:2px; }}
   .chart-grid {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:10px; margin-top:8px; }}
@@ -203,10 +226,11 @@ def render(rp, hist, generated_at, ended=False):
   <div class="route">{esc(rp.origin)} → {esc(rp.destination)}</div>
   <div class="muted">{rp.year}년 {rp.month}월 · 숙박 {rp.min_nights}~{rp.max_nights}박 · 왕복 총액(성인 1명, 세금 포함)</div>
   <div class="muted">마지막 업데이트 {esc(fmt_kst(rp.latest_collected_at))}</div>{ENDED_NOTE if ended else ""}
-  <div class="status">상태: {esc(rp.status)}</div>
+  <div class="status">기존 판정(검증 전): {esc(mark_flagged(rp.status, rp))}</div>
+  {flagged_note(rp)}
 
   <div class="grid">
-    {stat_card("현재 최저가", won(rp.current_min), "최신 수집분 전체 조합 중 최저").replace('class="card"', 'class="card hero"')}
+    {stat_card("마지막 수집 때 최저가", won(rp.current_min), "마지막 수집분 중 최저 · 지금 가격과 다를 수 있음").replace('class="card"', 'class="card hero"')}
     {stat_card("수집 이후 관측 최저가", won(rp.s_all.low), low_source_note(rp))}
     {window_cards(rp.s30, config.MIN_DAYS_FOR_STATS)}
     {window_cards(rp.s90, config.MIN_DAYS_FOR_STATS)}
@@ -215,7 +239,8 @@ def render(rp, hist, generated_at, ended=False):
 
   <h2>가격 판정</h2>
   {verdict_block(rp)}
-  <p class="muted" style="font-size:.8rem">이력이 부족하면 판단을 보류합니다. 수집되지 않은 기간의 가격은 추정하지 않습니다.</p>
+  <p class="muted" style="font-size:.8rem">이력이 부족하면 판단을 보류합니다. 수집되지 않은 기간의 가격은 추정하지 않습니다.
+  기존 판정은 검증 전이며, 비교에 쓰는 기록에 수집 이상값이 포함될 수 있습니다.</p>
 
   <h2>가격 이력</h2>
   {history_block(hist, rp)}
@@ -266,11 +291,12 @@ def route_card(route, rp, ended=False):
             f'<div class="muted">{esc(route.month_label)}{" (종료)" if ended else ""} · 숙박 {rp.min_nights}~{rp.max_nights}박 · '
             f'마지막 수집 {esc(fmt_kst(rp.latest_collected_at))}</div>'
             f'<dl class="rstats">'
-            f'<dt>현재 최저가</dt><dd class="big">{won(rp.current_min)}</dd>'
+            f'<dt>마지막 수집 때 최저가</dt><dd class="big">{won(rp.current_min)}</dd>'
             f'<dt>최근 30일 최저</dt><dd>{esc(low30)}</dd>'
             f'<dt>최근 30일 평균</dt><dd>{esc(avg30)}</dd>'
             f'<dt>수집 이후 관측 최저</dt><dd>{won(rp.s_all.low)} <span class="muted">({esc(low_source_note(rp))})</span></dd>'
-            f'</dl><div class="status-line">{esc(rp.status)}</div></a>')
+            f'</dl><div class="status-line">기존 판정(검증 전): {esc(mark_flagged(rp.status, rp))}'
+            f'{" · 비교 기록에 이상값 포함 가능" if rp.flagged else ""}</div></a>')
 
 
 def render_home(items, generated_at, today=None):
@@ -304,6 +330,7 @@ def render_home(items, generated_at, today=None):
 </head>
 <body>
 <main>
+  <div class="muted"><a href="index.html">← 첫 화면</a></div>
   <h1>✈️ Flight Price Tracker</h1>
   <div class="muted">왕복 총액(성인 1명, 세금 포함) · 매일 자동 수집 · 노선을 누르면 상세 보기</div>
   <h2>Tracked Routes ({len(items)})</h2>
@@ -340,8 +367,16 @@ def main():
             f.write(page)
         print(f"{route.slug}: {route.page_file} ({len(page):,} bytes) 현재 최저가 {rp.current_min:,}원 / 조합 {len(rp.trips)}개")
 
-    os.makedirs(os.path.dirname(config.DASHBOARD_FILE) or ".", exist_ok=True)
-    home = render_home(items, generated_at, today)
+    docs_dir = os.path.dirname(config.DASHBOARD_FILE) or "."
+    os.makedirs(docs_dir, exist_ok=True)
+    old_home = render_home(items, generated_at, today)       # 이전 첫 화면은 history.html 로 보존
+    with open(os.path.join(docs_dir, HISTORY_PAGE), "w", encoding="utf-8") as f:
+        f.write(old_home)
+    try:
+        home = build_home.render(offers.build_data(config, datetime.now(KST), docs_dir=docs_dir))
+    except Exception as e:     # 새 첫 화면 생성이 실패해도 수집 데이터 커밋이 막히면 안 되므로 이전 화면을 씁니다
+        print(f"::warning::새 첫 화면 생성 실패, 이전 첫 화면을 사용합니다: {type(e).__name__}: {e}")
+        home = old_home.replace('<a href="index.html">← 첫 화면</a>', "")
     with open(config.DASHBOARD_FILE, "w", encoding="utf-8") as f:
         f.write(home)
     print(f"홈 생성: {config.DASHBOARD_FILE} ({len(home):,} bytes, 노선 {len(items)}개)")
