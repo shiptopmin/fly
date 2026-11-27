@@ -1,6 +1,6 @@
 {
-  "date": "2026-11-26",
-  "run_at": "2026-11-26T19:42:57+09:00",
+  "date": "2026-11-27",
+  "run_at": "2026-11-27T19:43:55+09:00",
   "env": "actions",
   "origin": "ICN",
   "anchor": {
@@ -10,8 +10,8 @@
     "months_ahead": 1,
     "pairs": 36
   },
-  "page_loads": 20,
-  "elapsed_sec": 407,
+  "page_loads": 14,
+  "elapsed_sec": 197,
   "blocked": false,
   "probes": [
     {
@@ -20,66 +20,66 @@
       "records": 36,
       "saved": 36,
       "mismatches": 0,
-      "probe_days": 26,
-      "best_price": 248004,
+      "probe_days": 27,
+      "best_price": 256553,
       "best_dep": "2026-12-09",
       "best_ret": "2026-12-10",
       "best_nights": 1,
       "source_tag": "최저가",
-      "candidate_label": "WATCH",
-      "candidate_reason": "약한 신호 (같은 일정 전일 대비 14.0% 하락)"
+      "candidate_label": "NORMAL",
+      "candidate_reason": "평소 수준"
     },
     {
       "code": "HND",
       "label": "도쿄(HND)",
-      "records": 0,
-      "saved": 0,
-      "mismatches": 1,
-      "probe_days": null,
-      "best_price": null,
-      "best_dep": null,
-      "best_ret": null,
-      "best_nights": null,
-      "source_tag": "",
-      "candidate_label": null,
-      "candidate_reason": null
+      "records": 36,
+      "saved": 36,
+      "mismatches": 0,
+      "probe_days": 21,
+      "best_price": 400800,
+      "best_dep": "2026-12-08",
+      "best_ret": "2026-12-09",
+      "best_nights": 1,
+      "source_tag": "최저가",
+      "candidate_label": "NORMAL",
+      "candidate_reason": "평소 수준"
     },
     {
       "code": "KIX",
       "label": "오사카(KIX)",
-      "records": 0,
-      "saved": 0,
-      "mismatches": 1,
-      "probe_days": null,
-      "best_price": null,
-      "best_dep": null,
-      "best_ret": null,
-      "best_nights": null,
-      "source_tag": "",
-      "candidate_label": null,
-      "candidate_reason": null
+      "records": 36,
+      "saved": 36,
+      "mismatches": 0,
+      "probe_days": 24,
+      "best_price": 253400,
+      "best_dep": "2026-12-08",
+      "best_ret": "2026-12-09",
+      "best_nights": 1,
+      "source_tag": "최저가",
+      "candidate_label": "NORMAL",
+      "candidate_reason": "평소 수준"
     },
     {
       "code": "NRT",
       "label": "도쿄(NRT)",
-      "records": 0,
-      "saved": 0,
+      "records": 36,
+      "saved": 36,
       "mismatches": 0,
-      "probe_days": null,
-      "best_price": null,
-      "best_dep": null,
-      "best_ret": null,
-      "best_nights": null,
-      "source_tag": "",
-      "candidate_label": null,
-      "candidate_reason": null
+      "probe_days": 25,
+      "best_price": 255733,
+      "best_dep": "2026-12-08",
+      "best_ret": "2026-12-09",
+      "best_nights": 1,
+      "source_tag": "최저가",
+      "candidate_label": "WATCH",
+      "candidate_reason": "약한 신호 (평소보다 6.6% 낮음)"
     },
     {
       "code": "CTS",
       "label": "삿포로(CTS)",
       "records": 0,
       "saved": 0,
-      "mismatches": 0,
+      "mismatches": 1,
       "probe_days": null,
       "best_price": null,
       "best_dep": null,
@@ -94,7 +94,7 @@
       "label": "나고야(NGO)",
       "records": 0,
       "saved": 0,
-      "mismatches": 1,
+      "mismatches": 0,
       "probe_days": null,
       "best_price": null,
       "best_dep": null,
@@ -110,14 +110,14 @@
       "records": 36,
       "saved": 36,
       "mismatches": 0,
-      "probe_days": 26,
-      "best_price": 293893,
-      "best_dep": "2026-12-09",
-      "best_ret": "2026-12-10",
+      "probe_days": 27,
+      "best_price": 312322,
+      "best_dep": "2026-12-08",
+      "best_ret": "2026-12-09",
       "best_nights": 1,
       "source_tag": "최저가",
-      "candidate_label": "WATCH",
-      "candidate_reason": "약한 신호 (같은 일정 전일 대비 14.1% 하락)"
+      "candidate_label": "NORMAL",
+      "candidate_reason": "평소 수준"
     },
     {
       "code": "KOJ",
@@ -136,45 +136,26 @@
     }
   ],
   "candidates": [
-    "FUK",
-    "OKA"
+    "NRT"
   ],
   "confirmations": [
     {
-      "code": "FUK",
-      "label": "후쿠오카(FUK)",
-      "price": 248004,
-      "dep": "2026-12-09",
-      "ret": "2026-12-10",
-      "nights": 1,
-      "final_label": "WATCH",
-      "final_reason": "약한 신호 (같은 일정 전일 대비 14.0% 하락)",
-      "final_reasons": [
-        "판정 시점 2026-11-26 19:42: 이 시각 이전 관측 8,232건과 비교 (현재 관측은 비교 대상에서 제외)",
-        "비교 기준: 12월 출발 1박 모든 일정 (이력 26일치, 등급 OK, 관측 출처 tracker 5093건, probe 2016건, confirm 763건, preroll 360건)",
-        "③ 최근 30일 일별 최저 평균 239,060원(12월 출발 1박 모든 일정)보다 3.7% 높음",
-        "① 수집 이후 관측 최저 159,734원 대비 +88,270원 (2026-11-10 probe 기준)",
-        "② 동일 일정(12/09→12/10) 관측 최저 159,734원 대비 +88,270원",
-        "직전 수집일(2026-11-24) 288,300원 대비 -40,296원 (14.0% 하락)"
-      ]
-    },
-    {
-      "code": "OKA",
-      "label": "오키나와(OKA)",
-      "price": 319233,
+      "code": "NRT",
+      "label": "도쿄(NRT)",
+      "price": 248437,
       "dep": "2026-12-09",
       "ret": "2026-12-16",
       "nights": 7,
       "final_label": "WATCH",
-      "final_reason": "약한 신호 (평소보다 14.8% 낮음) · 다른 날짜 기준 비교",
+      "final_reason": "평소 대비 저가 (평소보다 24.7%) · 다른 날짜 기준 비교",
       "final_reasons": [
-        "판정 시점 2026-11-26 19:45: 이 시각 이전 관측 3,090건과 비교 (현재 관측은 비교 대상에서 제외)",
-        "비교 기준: 12월 출발 7박 모든 일정 (이력 26일치, 등급 OK, 관측 출처 probe 2016건, confirm 714건, preroll 360건)",
+        "판정 시점 2026-11-27 19:44: 이 시각 이전 관측 2,949건과 비교 (현재 관측은 비교 대상에서 제외)",
+        "비교 기준: 12월 출발 7박 모든 일정 (이력 25일치, 등급 OK, 관측 출처 probe 1980건, confirm 609건, preroll 360건)",
         "⚠ 비교 대상은 검색한 날짜(12/09→12/16)가 아니라 같은 숙박일수의 다른 날짜 기록입니다. 여행 날짜가 다르므로 참고치로 보세요",
-        "③ 최근 30일 일별 최저 평균 374,567원(12월 출발 7박 모든 일정)보다 14.8% 낮음 (DEAL 기준 15% 미만)",
-        "① 수집 이후 관측 최저 286,577원 대비 +32,656원 (2026-11-03 confirm 기준, 12/01→12/08)",
+        "③ 최근 30일 일별 최저 평균 330,064원(12월 출발 7박 모든 일정)보다 24.7% 낮음 (기준 15%)",
+        "① 수집 이후 관측 최저 242,500원 대비 +5,937원 (2026-10-23 preroll 기준, 12/05→12/12)",
         "② 동일 일정(12/09→12/16) 이력 1일치 (최소 5일) - 동일 일정 비교 보류",
-        "직전 수집일(2026-11-03) 대비 +12,614원 (4.1% 상승)"
+        "직전 수집일(2026-11-25) 244,196원과 1.7% 차이: 잡음 범위"
       ]
     }
   ],
@@ -192,18 +173,13 @@
     "destinations": [
       {
         "code": "FUK",
-        "status": "incomplete",
-        "records": 0,
-        "saved": 0,
-        "mismatches": 1,
-        "errors": 2,
-        "problems": [
-          "저장된 행 없음",
-          "수집 오류 2건: Grid cells did not stabilize within 15s (anchor=2027-01-12~2027-01-15); using last read (가격이 갱신되는 중이었을 수 있음)",
-          "가격 의미 검증 불일치 1건",
-          "가격 의미 교차검증 미완료"
-        ],
-        "nights_counts": ""
+        "status": "complete",
+        "records": 36,
+        "saved": 36,
+        "mismatches": 0,
+        "errors": 0,
+        "problems": [],
+        "nights_counts": "1:5|2:6|3:7|4:6|5:5|6:4|7:3"
       },
       {
         "code": "HND",
@@ -217,64 +193,6 @@
       },
       {
         "code": "KIX",
-        "status": "incomplete",
-        "records": 0,
-        "saved": 0,
-        "mismatches": 1,
-        "errors": 2,
-        "problems": [
-          "저장된 행 없음",
-          "수집 오류 2건: Grid cells did not stabilize within 15s (anchor=2027-01-12~2027-01-15); using last read (가격이 갱신되는 중이었을 수 있음)",
-          "가격 의미 검증 불일치 1건",
-          "가격 의미 교차검증 미완료"
-        ],
-        "nights_counts": ""
-      },
-      {
-        "code": "NRT",
-        "status": "incomplete",
-        "records": 0,
-        "saved": 0,
-        "mismatches": 0,
-        "errors": 1,
-        "problems": [
-          "저장된 행 없음",
-          "수집 오류 1건: '날짜 표' button not found for 2027-01-12~2027-01-15",
-          "가격 의미 교차검증 미완료"
-        ],
-        "nights_counts": ""
-      },
-      {
-        "code": "CTS",
-        "status": "incomplete",
-        "records": 0,
-        "saved": 0,
-        "mismatches": 1,
-        "errors": 2,
-        "problems": [
-          "저장된 행 없음",
-          "수집 오류 2건: Grid cells did not stabilize within 15s (anchor=2027-01-12~2027-01-15); using last read (가격이 갱신되는 중이었을 수 있음)",
-          "가격 의미 검증 불일치 1건",
-          "가격 의미 교차검증 미완료"
-        ],
-        "nights_counts": ""
-      },
-      {
-        "code": "NGO",
-        "status": "incomplete",
-        "records": 0,
-        "saved": 0,
-        "mismatches": 0,
-        "errors": 1,
-        "problems": [
-          "저장된 행 없음",
-          "수집 오류 1건: '날짜 표' button not found for 2027-01-12~2027-01-15",
-          "가격 의미 교차검증 미완료"
-        ],
-        "nights_counts": ""
-      },
-      {
-        "code": "OKA",
         "status": "complete",
         "records": 36,
         "saved": 36,
@@ -282,6 +200,51 @@
         "errors": 0,
         "problems": [],
         "nights_counts": "1:5|2:6|3:7|4:6|5:5|6:4|7:3"
+      },
+      {
+        "code": "NRT",
+        "status": "complete",
+        "records": 36,
+        "saved": 36,
+        "mismatches": 0,
+        "errors": 0,
+        "problems": [],
+        "nights_counts": "1:5|2:6|3:7|4:6|5:5|6:4|7:3"
+      },
+      {
+        "code": "CTS",
+        "status": "complete",
+        "records": 36,
+        "saved": 36,
+        "mismatches": 0,
+        "errors": 0,
+        "problems": [],
+        "nights_counts": "1:5|2:6|3:7|4:6|5:5|6:4|7:3"
+      },
+      {
+        "code": "NGO",
+        "status": "complete",
+        "records": 36,
+        "saved": 36,
+        "mismatches": 0,
+        "errors": 0,
+        "problems": [],
+        "nights_counts": "1:5|2:6|3:7|4:6|5:5|6:4|7:3"
+      },
+      {
+        "code": "OKA",
+        "status": "incomplete",
+        "records": 0,
+        "saved": 0,
+        "mismatches": 1,
+        "errors": 2,
+        "problems": [
+          "저장된 행 없음",
+          "수집 오류 2건: Grid cells did not stabilize within 15s (anchor=2027-01-12~2027-01-15); using last read (가격이 갱신되는 중이었을 수 있음)",
+          "가격 의미 검증 불일치 1건",
+          "가격 의미 교차검증 미완료"
+        ],
+        "nights_counts": ""
       },
       {
         "code": "KOJ",
@@ -294,7 +257,7 @@
         "nights_counts": "1:5|2:6|3:7|4:6|5:5|6:4|7:3"
       }
     ],
-    "elapsed_sec": 166,
+    "elapsed_sec": 88,
     "all_complete": false
   }
 }
